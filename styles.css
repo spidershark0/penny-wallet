@@ -990,13 +990,21 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .pw-tx-top {
   display: flex;
   gap: 6px;
   align-items: baseline;
+}
+
+.pw-tx-bottom {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .pw-tx-cat {
@@ -1019,6 +1027,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 45%;
 }
 
 .pw-tx-amount {
@@ -1034,6 +1044,22 @@
   display: flex;
   gap: 3px;
   justify-content: flex-end;
+}
+
+/* Desktop: hide actions, reveal on row hover */
+@media (pointer: fine) {
+  .pw-tx-actions {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .pw-tx-row:hover .pw-tx-actions {
+    opacity: 1;
+  }
+}
+
+/* Mobile long-press reveal */
+.pw-tx-row.is-revealed .pw-tx-actions {
+  opacity: 1;
 }
 
 /* Transaction row action buttons (edit/delete with SVG icons) */
@@ -1185,6 +1211,10 @@
   border-left: 4px solid currentColor;
   padding-left: calc(1rem - 4px);
 }
+.pw-metric--hero.income,
+.pw-metric--hero.positive { color: var(--pw-income); }
+.pw-metric--hero.expense,
+.pw-metric--hero.negative { color: var(--pw-expense); }
 
 .pw-metric-label {
   font-size: 12px;

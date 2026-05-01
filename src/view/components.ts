@@ -16,7 +16,10 @@ export function createMetric(
 ): HTMLElement {
   const { hero = false, dp = 0 } = options
   const card = container.createDiv('pw-metric')
-  if (hero) card.addClass('pw-metric--hero')
+  if (hero) {
+    card.addClass('pw-metric--hero')
+    if (variant !== 'neutral') card.addClass(variant)
+  }
   card.createEl('div', { text: label, cls: 'pw-metric-label' })
 
   const prefix =

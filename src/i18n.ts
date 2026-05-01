@@ -47,6 +47,7 @@ const translations = {
 
     // Fallback
     'cat.uncategorized': '未分類',
+    'cat.other': '其他',
 
     // UI labels
     'ui.addTransaction': '新增交易',
@@ -243,6 +244,7 @@ const translations = {
     'cat.investment_trade': 'Investment Trade',
 
     'cat.uncategorized': 'Uncategorized',
+    'cat.other': 'Other',
 
     'ui.addTransaction': 'Add Transaction',
     'ui.detail': 'Transactions',

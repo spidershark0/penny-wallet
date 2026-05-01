@@ -313,6 +313,25 @@ export function drawNetChart(container: HTMLElement, tooltip: HTMLElement, data:
 
 // ─── Pie chart ────────────────────────────────────────────────────────────────
 
+export function filterPieData(data: Map<string, number>): Map<string, number> {
+  if (data.size === 0) return new Map()
+  const total = [...data.values()].reduce((a, b) => a + b, 0)
+  if (total === 0) return new Map()
+
+  const filtered = new Map<string, number>()
+  let otherTotal = 0
+
+  for (const [key, value] of data) {
+    if ((value / total) * 100 >= 1) {
+      filtered.set(key, value)
+    } else {
+      otherTotal += value
+    }
+  }
+  if (otherTotal > 0) filtered.set('__other__', otherTotal)
+  return filtered
+}
+
 export function drawPie(
   container: HTMLElement,
   data: Map<string, number>,
@@ -320,18 +339,19 @@ export function drawPie(
   onSegmentClick?: (categoryKey: string) => void,
   size = 120,
 ) {
-  const total = [...data.values()].reduce((a, b) => a + b, 0)
+  const filtered = filterPieData(data)
+  const total = [...filtered.values()].reduce((a, b) => a + b, 0)
 
   const segments: { key: string; label: string; value: number; color: string; start: number; end: number }[] = []
 
   let angle = -Math.PI / 2
   let ci = 0
 
-  for (const [key, value] of data) {
+  for (const [key, value] of filtered) {
     const slice = (value / total) * Math.PI * 2
     segments.push({
       key,
-      label: translateCategory(key),
+      label: key === '__other__' ? t('cat.other') : translateCategory(key),
       value,
       color: PIE_COLORS[ci % PIE_COLORS.length],
       start: angle,
@@ -411,7 +431,7 @@ export function drawPie(
   if (onSegmentClick) {
     canvas.addEventListener('click', (e) => {
       const idx = hitTest(e.clientX, e.clientY)
-      if (idx >= 0) onSegmentClick(segments[idx].key)
+      if (idx >= 0 && segments[idx].key !== '__other__') onSegmentClick(segments[idx].key)
     })
 
     canvas.addEventListener('touchstart', (e) => {
@@ -424,7 +444,7 @@ export function drawPie(
       setTimeout(() => {
         tooltip.hide()
         redraw(-1)
-        onSegmentClick(segments[idx].key)
+        if (segments[idx].key !== '__other__') onSegmentClick(segments[idx].key)
       }, 600)
     }, { passive: false })
   }
@@ -432,7 +452,7 @@ export function drawPie(
   const legend = pieWrap.createDiv('pw-pie-legend')
   segments.forEach((seg) => {
     const item = legend.createDiv('pw-legend-item')
-    if (onSegmentClick) {
+    if (onSegmentClick && seg.key !== '__other__') {
       item.setCssProps({ cursor: 'pointer' })
       item.addEventListener('click', () => onSegmentClick(seg.key))
     }
