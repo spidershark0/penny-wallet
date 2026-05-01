@@ -7,6 +7,7 @@ import { formatAmount } from '../utils'
 import { DETAIL_VIEW_TYPE } from './DetailView'
 import { DASHBOARD_VIEW_TYPE } from './DashboardView'
 import { MonthData, drawNetChart, drawPie, getMonthRange } from './charts'
+import { renderCard } from './components'
 
 export const ASSET_VIEW_TYPE = 'penny-wallet-asset'
 
@@ -78,8 +79,7 @@ export class AssetView extends ItemView {
     const leftCol = grid.createDiv('pw-asset-left')
 
     // Wallet balances card
-    const walletCard = leftCol.createDiv('pw-card')
-    walletCard.createEl('div', { text: t('dash.walletBalances'), cls: 'pw-card-title' })
+    const walletCard = renderCard(leftCol, { title: t('dash.walletBalances') })
     const walletList = walletCard.createDiv('pw-wallet-list')
 
     for (const { wallet, balance } of walletBalances) {
@@ -114,8 +114,7 @@ export class AssetView extends ItemView {
       if (balance > 0) assetMap.set(wallet.name, balance)
     }
     if (assetMap.size >= 2) {
-      const assetCard = leftCol.createDiv('pw-card')
-      assetCard.createEl('div', { text: t('dash.assetAllocation'), cls: 'pw-card-title' })
+      const assetCard = renderCard(leftCol, { title: t('dash.assetAllocation') })
       drawPie(assetCard, assetMap, dp)
     }
 
@@ -123,7 +122,7 @@ export class AssetView extends ItemView {
     const rightCol = grid.createDiv('pw-asset-right')
 
     // Net asset trend card (with range picker inside)
-    const netCard = rightCol.createDiv('pw-card')
+    const netCard = renderCard(rightCol)  // no title — header row holds it
     const netCardHeader = netCard.createDiv('pw-card-header-row')
     netCardHeader.createEl('div', { text: t('asset.netAssetTrend'), cls: 'pw-card-title' })
     const rangeRow = netCardHeader.createDiv('pw-range-row')

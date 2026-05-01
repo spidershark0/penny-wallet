@@ -3,7 +3,8 @@ import { WalletFile } from '../io/WalletFile'
 import { TransactionModal } from '../modal/TransactionModal'
 import { MobileTransactionModal } from '../modal/MobileTransactionModal'
 import { t, formatMonthLabel, formatYearMonth } from '../i18n'
-import { currentYearMonth, stepMonth, isAfterCurrentMonth, createMetric } from '../utils'
+import { currentYearMonth, stepMonth, isAfterCurrentMonth } from '../utils'
+import { createMetric, renderCard } from './components'
 import { TransactionType } from '../types'
 import { DETAIL_VIEW_TYPE } from './DetailView'
 import { ASSET_VIEW_TYPE } from './AssetView'
@@ -105,9 +106,12 @@ export class DashboardView extends ItemView {
     const monthBalance = monthIncome - monthExpense
 
     const metricsEl = contentEl.createDiv('pw-metrics')
-    createMetric(metricsEl, t('dash.income'),  monthIncome,   'income',   dp)
-    createMetric(metricsEl, t('dash.expense'), monthExpense,  'expense',  dp)
-    createMetric(metricsEl, t('dash.balance'), monthBalance,  monthBalance >= 0 ? 'positive' : 'negative', dp)
+    createMetric(metricsEl, t('dash.income'),  monthIncome,  'income',  { dp })
+    createMetric(metricsEl, t('dash.expense'), monthExpense, 'expense', { dp })
+    createMetric(metricsEl, t('dash.balance'), monthBalance,
+      monthBalance >= 0 ? 'positive' : 'negative',
+      { dp, hero: true },
+    )
 
     // ── 6-month bar chart ────────────────────────────────────────────────────
     const data: MonthData[] = months.map(ym => ({
@@ -121,8 +125,10 @@ export class DashboardView extends ItemView {
     // ── 2-column grid: bar chart left, pie charts right ─────────────────────
     const grid2 = contentEl.createDiv('pw-grid-2')
 
-    const incExpCard = grid2.createDiv('pw-card pw-inc-exp-card')
-    incExpCard.createEl('div', { text: t('trend.monthlyIncomeExpense'), cls: 'pw-card-title' })
+    const incExpCard = renderCard(grid2, {
+      title: t('trend.monthlyIncomeExpense'),
+      className: 'pw-inc-exp-card',
+    })
     const legRow = incExpCard.createDiv('pw-leg-row')
     addRectLegend(legRow, C_INCOME, t('dash.income'))
     addRectLegend(legRow, C_EXPENSE, t('dash.expense'))
@@ -137,13 +143,11 @@ export class DashboardView extends ItemView {
     const expenseMap = this.walletFile.groupByCategory(transactions, 'expense')
     const incomeMap  = this.walletFile.groupByCategory(transactions, 'income')
 
-    const expCard = gridRight.createDiv('pw-card')
-    expCard.createEl('div', { text: t('dash.expenseByCategory'), cls: 'pw-card-title' })
+    const expCard = renderCard(gridRight, { title: t('dash.expenseByCategory') })
     if (expenseMap.size > 0) drawPie(expCard, expenseMap, dp, (cat) => { void this.openDetailWithFilter('expense', cat) }, 160)
     else expCard.createEl('p', { text: t('dash.noData'), cls: 'pw-no-data' })
 
-    const incCard = gridRight.createDiv('pw-card')
-    incCard.createEl('div', { text: t('dash.incomeByCategory'), cls: 'pw-card-title' })
+    const incCard = renderCard(gridRight, { title: t('dash.incomeByCategory') })
     if (incomeMap.size > 0) drawPie(incCard, incomeMap, dp, (cat) => { void this.openDetailWithFilter('income', cat) }, 160)
     else incCard.createEl('p', { text: t('dash.noData'), cls: 'pw-no-data' })
   }

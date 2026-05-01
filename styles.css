@@ -1,3 +1,32 @@
+:root {
+  /* Type colors — currently dark-tuned; light theme overrides deferred */
+  --pw-income: #5DCAA5;
+  --pw-expense: #EF9F27;
+  --pw-bank: #378ADD;
+  --pw-cash: #1D9E75;
+  --pw-credit: #D85A30;
+  --pw-transfer: #85B7EB;
+  --pw-payment: #AFA9EC;
+
+  /* Type color tints (badge backgrounds) */
+  --pw-income-tint: rgba(29, 158, 117, 0.12);
+  --pw-expense-tint: rgba(216, 90, 48, 0.12);
+  --pw-bank-tint: rgba(55, 138, 221, 0.12);
+  --pw-credit-tint: rgba(216, 90, 48, 0.12);
+  --pw-transfer-tint: rgba(133, 183, 235, 0.15);
+  --pw-payment-tint: rgba(175, 169, 236, 0.15);
+
+  /* Card elevation */
+  --pw-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --pw-card-shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+  /* UI component shadows */
+  --pw-shadow-dropdown: 0 4px 14px rgba(0, 0, 0, 0.15);
+  --pw-shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --pw-shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --pw-shadow-overlay-above: 0 -4px 16px rgba(0, 0, 0, 0.4);
+}
+
 /* ── PennyWallet Plugin Styles ── */
 
 /* Allow text selection in all PennyWallet views (Obsidian sets user-select: none on leaves) */
@@ -605,9 +634,9 @@
 .pw-wallet-left { display: flex; align-items: center; gap: 8px; }
 
 .pw-wallet-badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 500; flex-shrink: 0; white-space: nowrap; }
-.pw-badge-cash       { background: rgba(29,158,117,0.12); color: #1D9E75; }
-.pw-badge-bank       { background: rgba(55,138,221,0.12); color: #378ADD; }
-.pw-badge-creditCard { background: rgba(216,90,48,0.12);  color: #D85A30; }
+.pw-badge-cash       { background: var(--pw-income-tint); color: var(--pw-cash); }
+.pw-badge-bank       { background: var(--pw-bank-tint); color: var(--pw-bank); }
+.pw-badge-creditCard { background: var(--pw-credit-tint); color: var(--pw-credit); }
 
 .pw-wallet-name {
   color: var(--text-normal);
@@ -621,7 +650,7 @@
 }
 
 .pw-wallet-balance.is-negative {
-  color: #EF9F27;
+  color: var(--pw-expense);
 }
 
 .pw-net-asset-row {
@@ -638,11 +667,11 @@
 .pw-net-value {
   font-size: 18px;
   font-weight: 700;
-  color: #5DCAA5;
+  color: var(--pw-income);
 }
 
 .pw-net-value.is-negative {
-  color: #EF9F27;
+  color: var(--pw-expense);
 }
 
 /* Charts */
@@ -731,6 +760,7 @@
 .pw-legend-amt {
   color: var(--text-normal);
   font-variant-numeric: tabular-nums;
+  margin-right: 8px;
 }
 
 .pw-legend-pct { color: var(--text-faint); }
@@ -824,7 +854,7 @@
   border-radius: 8px;
   padding: 4px;
   min-width: 140px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--pw-shadow-dropdown);
 }
 
 .pw-cat-item {
@@ -950,10 +980,10 @@
   font-weight: 600;
 }
 
-.pw-type-expense { background: rgba(216,90,48,0.12); color: #D85A30; }
-.pw-type-income  { background: rgba(29,158,117,0.12); color: #1D9E75; }
-.pw-type-transfer { background: rgba(133,183,235,0.15); color: #85B7EB; }
-.pw-type-payment  { background: rgba(175,169,236,0.15); color: #AFA9EC; }
+.pw-type-expense  { background: var(--pw-expense-tint); color: var(--pw-expense); }
+.pw-type-income   { background: var(--pw-income-tint);  color: var(--pw-income); }
+.pw-type-transfer { background: var(--pw-transfer-tint); color: var(--pw-transfer); }
+.pw-type-payment  { background: var(--pw-payment-tint); color: var(--pw-payment); }
 
 .pw-tx-main {
   flex: 1;
@@ -997,8 +1027,8 @@
   white-space: nowrap;
 }
 
-.pw-tx-amount.is-income  { color: #1D9E75; }
-.pw-tx-amount.is-expense { color: #D85A30; }
+.pw-tx-amount.is-income  { color: var(--pw-income); }
+.pw-tx-amount.is-expense { color: var(--pw-expense); }
 
 .pw-tx-actions {
   display: flex;
@@ -1047,28 +1077,6 @@
   stroke: var(--text-error);
 }
 
-/* Legacy action buttons in transaction rows (text-based) - keeping for compatibility */
-.pw-action-btn {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 15px;
-  min-width: 36px;
-  min-height: 36px;
-}
-
-.pw-action-btn:hover {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-.pw-delete-btn:hover {
-  color: var(--text-error);
-}
-
 .pw-subtotal-row {
   display: flex;
   gap: 24px;
@@ -1096,8 +1104,8 @@
   }
 }
 
-.pw-subtotal-income  { color: #5DCAA5; font-weight: 600; }
-.pw-subtotal-expense { color: #EF9F27; font-weight: 600; }
+.pw-subtotal-income  { color: var(--pw-income); font-weight: 600; }
+.pw-subtotal-expense { color: var(--pw-expense); font-weight: 600; }
 
 /* Card container for charts */
 .pw-card {
@@ -1106,6 +1114,11 @@
   border-radius: 14px;
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
+  box-shadow: var(--pw-card-shadow);
+}
+
+.pw-card--raised {
+  box-shadow: var(--pw-card-shadow-raised);
 }
 
 .pw-card-title {
@@ -1113,8 +1126,6 @@
   color: var(--text-muted);
   font-weight: bold;
   margin-bottom: 10px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
 /* Chart legend */
@@ -1151,10 +1162,13 @@
 /* Metrics (summary cards at bottom) */
 .pw-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr 1.4fr;
   gap: 10px;
   padding: 16px 20px;
   margin-bottom: 0;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pw-asset .pw-metrics {
@@ -1167,22 +1181,28 @@
   padding: 0.875rem 1rem;
 }
 
+.pw-metric--hero {
+  border-left: 4px solid currentColor;
+  padding-left: calc(1rem - 4px);
+}
+
 .pw-metric-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 5px;
   letter-spacing: 0.03em;
 }
 
 .pw-metric-value {
-  font-size: 20px;
-  font-weight: normal;
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.pw-metric-value.income { color: #5DCAA5; }
-.pw-metric-value.expense { color: #EF9F27; }
-.pw-metric-value.positive { color: #5DCAA5; }
-.pw-metric-value.negative { color: #EF9F27; }
+.pw-metric-value.income   { color: var(--pw-income); }
+.pw-metric-value.expense  { color: var(--pw-expense); }
+.pw-metric-value.positive { color: var(--pw-income); }
+.pw-metric-value.negative { color: var(--pw-expense); }
 
 .pw-range-row {
   display: flex;
@@ -1224,7 +1244,7 @@
   pointer-events: none;
   z-index: 10;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--pw-shadow-tooltip);
 }
 
 .pw-tt-row {
@@ -1611,7 +1631,7 @@ select.pw-add-wallet-input {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--pw-shadow-overlay);
   max-height: 320px; /* desktop: ~10 items before scroll */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1620,7 +1640,7 @@ select.pw-add-wallet-input {
 /* Mobile: keyboard open, dropdown shows above input */
 .pw-tag-dropdown--above {
   max-height: 152px; /* ~4 items */
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--pw-shadow-overlay-above);
 }
 
 .pw-tag-dropdown-item {
@@ -1831,4 +1851,15 @@ select.pw-add-wallet-input {
 
 .pw-validation-fix-all-btn:hover {
   background: var(--interactive-accent-hover);
+}
+
+/* ── A11y: keyboard focus rings ── */
+.pw-action-btn:focus-visible,
+.pw-nav-btn:focus-visible,
+.pw-pill:focus-visible,
+.pw-range-btn:focus-visible,
+.pw-txn-btn:focus-visible,
+.pw-cat-toggle:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
 }
