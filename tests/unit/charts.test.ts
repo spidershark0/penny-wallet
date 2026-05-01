@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest'
-import { filterPieData } from '../../src/view/charts'
+import { filterPieData, formatK } from '../../src/view/charts'
+
+describe('formatK', () => {
+  it('formats values >= 10000 as Nk', () => {
+    expect(formatK(50000)).toBe('50k')
+    expect(formatK(97000)).toBe('97k')
+    expect(formatK(10000)).toBe('10k')
+  })
+
+  it('formats negative values >= 10000 abs as -Nk', () => {
+    expect(formatK(-50000)).toBe('-50k')
+  })
+
+  it('formats values < 10000 with locale string (abs)', () => {
+    expect(formatK(9999)).toBe('9,999')
+    expect(formatK(1500)).toBe('1,500')
+  })
+
+  it('respects dp=2 for < 10000', () => {
+    expect(formatK(1500, 2)).toBe('1,500.00')
+  })
+})
 
 describe('filterPieData', () => {
   it('keeps segments >= 1%', () => {

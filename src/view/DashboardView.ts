@@ -8,16 +8,20 @@ import { createMetric, renderCard } from './components'
 import { TransactionType } from '../types'
 import { DETAIL_VIEW_TYPE } from './DetailView'
 import { ASSET_VIEW_TYPE } from './AssetView'
-import { MonthData, drawIncExpChart, drawPie, addRectLegend, getMonthRangeEndingAt } from './charts'
+import { Chart } from 'chart.js'
+import { MonthData, drawIncExpChart, drawPie, getMonthRangeEndingAt } from './charts'
 
 export const DASHBOARD_VIEW_TYPE = 'penny-wallet-dashboard'
-
-const C_INCOME  = '#1D9E75'
-const C_EXPENSE = '#D85A30'
 
 export class DashboardView extends ItemView {
   private walletFile: WalletFile
   private currentYearMonth: string
+  private charts: Chart[] = []
+
+  private clearCharts() {
+    this.charts.forEach(c => c.destroy())
+    this.charts = []
+  }
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -33,16 +37,21 @@ export class DashboardView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
+    this.registerEvent(
+      (this.app.workspace as Events).on('css-change', () => { void this.render() })
+    )
     await this.render()
   }
 
   onClose(): Promise<void> {
+    this.clearCharts()
     this.contentEl.empty()
     return Promise.resolve()
   }
 
   async render() {
     const { contentEl } = this
+    this.clearCharts()
     contentEl.empty()
     contentEl.addClass('pw-dashboard')
 
@@ -129,13 +138,8 @@ export class DashboardView extends ItemView {
       title: t('trend.monthlyIncomeExpense'),
       className: 'pw-inc-exp-card',
     })
-    const legRow = incExpCard.createDiv('pw-leg-row')
-    addRectLegend(legRow, C_INCOME, t('dash.income'))
-    addRectLegend(legRow, C_EXPENSE, t('dash.expense'))
     const incExpChartWrap = incExpCard.createDiv('pw-chart-wrap')
-    const incExpTooltip = incExpChartWrap.createDiv('pw-tooltip')
-    incExpTooltip.hide()
-    requestAnimationFrame(() => drawIncExpChart(incExpChartWrap, incExpTooltip, data, dp))
+    this.charts.push(drawIncExpChart(incExpChartWrap, data, dp))
 
     // ── Category pies ────────────────────────────────────────────────────────
     const gridRight = grid2.createDiv('pw-grid-right')
@@ -144,11 +148,11 @@ export class DashboardView extends ItemView {
     const incomeMap  = this.walletFile.groupByCategory(transactions, 'income')
 
     const expCard = renderCard(gridRight, { title: t('dash.expenseByCategory') })
-    if (expenseMap.size > 0) drawPie(expCard, expenseMap, dp, (cat) => { void this.openDetailWithFilter('expense', cat) }, 160)
+    if (expenseMap.size > 0) this.charts.push(drawPie(expCard, expenseMap, dp, (cat) => { void this.openDetailWithFilter('expense', cat) }, 200))
     else expCard.createEl('p', { text: t('dash.noData'), cls: 'pw-no-data' })
 
     const incCard = renderCard(gridRight, { title: t('dash.incomeByCategory') })
-    if (incomeMap.size > 0) drawPie(incCard, incomeMap, dp, (cat) => { void this.openDetailWithFilter('income', cat) }, 160)
+    if (incomeMap.size > 0) this.charts.push(drawPie(incCard, incomeMap, dp, (cat) => { void this.openDetailWithFilter('income', cat) }, 200))
     else incCard.createEl('p', { text: t('dash.noData'), cls: 'pw-no-data' })
   }
 

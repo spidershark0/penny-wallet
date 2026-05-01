@@ -6,6 +6,7 @@ import { t, formatMonthLabel, formatYearMonth } from '../i18n'
 import { formatAmount } from '../utils'
 import { DETAIL_VIEW_TYPE } from './DetailView'
 import { DASHBOARD_VIEW_TYPE } from './DashboardView'
+import { Chart } from 'chart.js'
 import { MonthData, drawNetChart, drawPie, getMonthRange } from './charts'
 import { renderCard } from './components'
 
@@ -14,6 +15,12 @@ export const ASSET_VIEW_TYPE = 'penny-wallet-asset'
 export class AssetView extends ItemView {
   private walletFile: WalletFile
   private range: number = 6
+  private charts: Chart[] = []
+
+  private clearCharts() {
+    this.charts.forEach(c => c.destroy())
+    this.charts = []
+  }
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -28,16 +35,21 @@ export class AssetView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
+    this.registerEvent(
+      (this.app.workspace as Events).on('css-change', () => { void this.render() })
+    )
     await this.render()
   }
 
   onClose(): Promise<void> {
+    this.clearCharts()
     this.contentEl.empty()
     return Promise.resolve()
   }
 
   async render() {
     const { contentEl } = this
+    this.clearCharts()
     const savedScroll = contentEl.scrollTop
     contentEl.empty()
     contentEl.addClass('pw-asset')
@@ -115,7 +127,7 @@ export class AssetView extends ItemView {
     }
     if (assetMap.size >= 2) {
       const assetCard = renderCard(leftCol, { title: t('dash.assetAllocation') })
-      drawPie(assetCard, assetMap, dp)
+      this.charts.push(drawPie(assetCard, assetMap, dp))
     }
 
     // ── Right column ─────────────────────────────────────────────────────────
@@ -145,13 +157,8 @@ export class AssetView extends ItemView {
     }))
 
     const netChartWrap = netCard.createDiv('pw-chart-wrap')
-    const netTooltip = netChartWrap.createDiv('pw-tooltip')
-    netTooltip.hide()
-
-    requestAnimationFrame(() => {
-      drawNetChart(netChartWrap, netTooltip, data, dp)
-      contentEl.scrollTop = savedScroll
-    })
+    this.charts.push(drawNetChart(netChartWrap, data, dp))
+    contentEl.scrollTop = savedScroll
   }
 
   private async openOrRevealView(type: string, options?: { state?: Record<string, unknown> }) {
