@@ -42,7 +42,6 @@ const translations = {
     // Default transfer categories
     'cat.account_transfer': '帳戶互轉',
     'cat.credit_card_payment': '信用卡繳費',
-    'cat.credit_card_refund': '信用卡刷退',
     'cat.investment_trade': '投資買賣',
 
     // Fallback
@@ -107,6 +106,7 @@ const translations = {
     'modal.tagsPlaceholder': '輸入標籤後按 Enter',
     'modal.done': '完成',
     'modal.amount': '金額',
+    'modal.isRefund': '這是退款',
 
     // Validation errors
     'err.amountRequired': '請輸入金額',
@@ -240,7 +240,6 @@ const translations = {
 
     'cat.account_transfer': 'Account Transfer',
     'cat.credit_card_payment': 'Credit Card Payment',
-    'cat.credit_card_refund': 'Credit Card Refund',
     'cat.investment_trade': 'Investment Trade',
 
     'cat.uncategorized': 'Uncategorized',
@@ -298,6 +297,7 @@ const translations = {
     'modal.tagsPlaceholder': 'Type and press Enter',
     'modal.done': 'Done',
     'modal.amount': 'Amount',
+    'modal.isRefund': 'This is a refund',
 
     'err.amountRequired': 'Amount is required',
     'err.amountPositive': 'Amount must be greater than 0',

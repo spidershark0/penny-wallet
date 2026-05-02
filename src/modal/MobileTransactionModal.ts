@@ -73,6 +73,7 @@ export class MobileTransactionModal extends TransactionModal {
       })
       tab.addEventListener('click', () => {
         this.type = tp
+        if (tp !== 'expense') this.isRefund = false
         if (tp === 'expense' || tp === 'income') {
           this.fromWallet = ''
           this.toWallet = ''
@@ -127,11 +128,14 @@ export class MobileTransactionModal extends TransactionModal {
       })
 
       // Wallet
+      const walletOptions = this.type === 'income'
+        ? activeWallets.filter(w => w.type !== 'creditCard')
+        : activeWallets
       this.addMobilePickerRow(this.mobileRowsEl, t('modal.wallet'), this.wallet || '—', (valueEl) => {
         const sel = createEl('select')
         sel.addClass('pw-mobile-row-picker')
         sel.createEl('option', { text: '—', value: '' })
-        for (const w of activeWallets) {
+        for (const w of walletOptions) {
           const opt = sel.createEl('option', { text: w.name, value: w.name })
           if (w.name === this.wallet) opt.selected = true
         }
@@ -141,6 +145,17 @@ export class MobileTransactionModal extends TransactionModal {
         })
         return sel
       })
+
+      // Refund toggle (expense only)
+      if (this.type === 'expense') {
+        const refundRow = this.mobileRowsEl.createDiv('pw-mobile-row')
+        refundRow.createEl('span', { cls: 'pw-mobile-row-label', text: t('modal.isRefund') })
+        const checkbox = refundRow.createEl('input', { type: 'checkbox' })
+        checkbox.checked = this.isRefund
+        checkbox.addEventListener('change', () => {
+          this.isRefund = checkbox.checked
+        })
+      }
     } else {
       // Category
       const categories = this.getCategoryOptions(config)
@@ -168,70 +183,46 @@ export class MobileTransactionModal extends TransactionModal {
         const toType   = config.wallets.find(w => w.name === this.toWallet)?.type
         if (fromType === 'creditCard') this.fromWallet = ''
         if (toType && toType !== 'creditCard') this.toWallet = ''
-      } else if (this.category === 'credit_card_refund') {
-        const fromType = config.wallets.find(w => w.name === this.fromWallet)?.type
-        if (fromType && fromType !== 'creditCard') this.fromWallet = ''
-        this.toWallet = this.fromWallet
       }
 
-      if (this.category === 'credit_card_refund') {
-        // Single account field — always a credit card
-        const ccWallets = activeWallets.filter(w => w.type === 'creditCard')
-        this.addMobilePickerRow(this.mobileRowsEl, t('modal.wallet'), this.fromWallet || '—', (valueEl) => {
-          const sel = createEl('select')
-          sel.addClass('pw-mobile-row-picker')
-          sel.createEl('option', { text: '—', value: '' })
-          for (const w of ccWallets) {
-            const opt = sel.createEl('option', { text: w.name, value: w.name })
-            if (w.name === this.fromWallet) opt.selected = true
-          }
-          sel.addEventListener('change', () => {
-            this.fromWallet = sel.value
-            this.toWallet = sel.value
-            valueEl.textContent = this.fromWallet || '—'
-          })
-          return sel
-        })
-      } else {
-        const fromWallets = this.category === 'credit_card_payment'
-          ? activeWallets.filter(w => w.type !== 'creditCard')
-          : activeWallets
-        const toWallets = this.category === 'credit_card_payment'
-          ? activeWallets.filter(w => w.type === 'creditCard')
-          : activeWallets
+      const fromWallets = this.category === 'credit_card_payment'
+        ? activeWallets.filter(w => w.type !== 'creditCard')
+        : activeWallets
+      const toWallets = this.category === 'credit_card_payment'
+        ? activeWallets.filter(w => w.type === 'creditCard')
+        : activeWallets
 
-        // From wallet
-        this.addMobilePickerRow(this.mobileRowsEl, t('modal.fromWallet'), this.fromWallet || '—', (valueEl) => {
-          const sel = createEl('select')
-          sel.addClass('pw-mobile-row-picker')
-          sel.createEl('option', { text: '—', value: '' })
-          for (const w of fromWallets) {
-            const opt = sel.createEl('option', { text: w.name, value: w.name })
-            if (w.name === this.fromWallet) opt.selected = true
-          }
-          sel.addEventListener('change', () => {
-            this.fromWallet = sel.value
-            valueEl.textContent = this.fromWallet || '—'
-          })
-          return sel
+      // From wallet
+      this.addMobilePickerRow(this.mobileRowsEl, t('modal.fromWallet'), this.fromWallet || '—', (valueEl) => {
+        const sel = createEl('select')
+        sel.addClass('pw-mobile-row-picker')
+        sel.createEl('option', { text: '—', value: '' })
+        for (const w of fromWallets) {
+          const opt = sel.createEl('option', { text: w.name, value: w.name })
+          if (w.name === this.fromWallet) opt.selected = true
+        }
+        sel.addEventListener('change', () => {
+          this.fromWallet = sel.value
+          valueEl.textContent = this.fromWallet || '—'
         })
+        return sel
+      })
 
-        // To wallet
-        this.addMobilePickerRow(this.mobileRowsEl, t('modal.toWallet'), this.toWallet || '—', (valueEl) => {
-          const sel = createEl('select')
-          sel.addClass('pw-mobile-row-picker')
-          sel.createEl('option', { text: '—', value: '' })
-          for (const w of toWallets) {
-            const opt = sel.createEl('option', { text: w.name, value: w.name })
-            if (w.name === this.toWallet) opt.selected = true
-          }
-          sel.addEventListener('change', () => {
-            this.toWallet = sel.value
-            valueEl.textContent = this.toWallet || '—'
-          })
-          return sel
+      // To wallet
+      this.addMobilePickerRow(this.mobileRowsEl, t('modal.toWallet'), this.toWallet || '—', (valueEl) => {
+        const sel = createEl('select')
+        sel.addClass('pw-mobile-row-picker')
+        sel.createEl('option', { text: '—', value: '' })
+        for (const w of toWallets) {
+          const opt = sel.createEl('option', { text: w.name, value: w.name })
+          if (w.name === this.toWallet) opt.selected = true
+        }
+        sel.addEventListener('change', () => {
+          this.toWallet = sel.value
+          valueEl.textContent = this.toWallet || '—'
         })
-      }
+        return sel
+      })
     }
 
     // Tags

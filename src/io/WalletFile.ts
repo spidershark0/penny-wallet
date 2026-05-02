@@ -784,18 +784,12 @@ export class WalletFile {
         }
         break
       case 'transfer':
-        if (tx.category === 'credit_card_refund' && tx.fromWallet === tx.toWallet) {
-          // Credit card refund: fromWallet == toWallet == credit card; debt decreases once
-          if (tx.toWallet && map.has(tx.toWallet))
-            map.set(tx.toWallet, (map.get(tx.toWallet) ?? 0) - tx.amount)
-        } else if (tx.category === 'credit_card_payment') {
-          // Credit card payment: from (bank) decreases, to (credit card) debt decreases
+        if (tx.category === 'credit_card_payment') {
           if (tx.fromWallet && map.has(tx.fromWallet))
             map.set(tx.fromWallet, (map.get(tx.fromWallet) ?? 0) - tx.amount)
           if (tx.toWallet && map.has(tx.toWallet))
             map.set(tx.toWallet, (map.get(tx.toWallet) ?? 0) - tx.amount)
         } else {
-          // Normal transfer: from decreases, to increases
           if (tx.fromWallet && map.has(tx.fromWallet))
             map.set(tx.fromWallet, (map.get(tx.fromWallet) ?? 0) - tx.amount)
           if (tx.toWallet && map.has(tx.toWallet))

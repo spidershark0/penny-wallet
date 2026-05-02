@@ -84,7 +84,7 @@ export const DEFAULT_INCOME_CATEGORIES = [
 
 export const DEFAULT_TRANSFER_CATEGORIES = [
   'account_transfer', 'credit_card_payment',
-  'credit_card_refund', 'investment_trade',
+  'investment_trade',
 ] as const
 
 export const DEFAULT_CONFIG: PennyWalletConfig = {

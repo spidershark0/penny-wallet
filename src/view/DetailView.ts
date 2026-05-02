@@ -348,12 +348,15 @@ export class DetailView extends ItemView {
       if (tx.note) bottom.createEl('span', { text: tx.note, cls: 'pw-tx-note' })
     }
 
-    const amountCls = tx.type === 'income' ? 'pw-tx-amount is-income'
+    const isRefund = tx.type === 'expense' && tx.amount < 0
+    const amountCls = isRefund ? 'pw-tx-amount is-refund'
+      : tx.type === 'income' ? 'pw-tx-amount is-income'
       : tx.type === 'expense' ? 'pw-tx-amount is-expense'
       : 'pw-tx-amount'
-    const amountPrefix = tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''
+    const amountPrefix = isRefund ? '+' : tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''
+    const displayAmount = isRefund ? -tx.amount : tx.amount
     row.createEl('span', {
-      text: amountPrefix + formatAmount(tx.amount, dp),
+      text: amountPrefix + formatAmount(displayAmount, dp),
       cls: amountCls,
     })
 

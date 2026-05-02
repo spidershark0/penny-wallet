@@ -473,6 +473,17 @@ canvas {
   border-color: var(--interactive-accent);
 }
 
+.pw-field-input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  min-height: unset;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
 .pw-error {
   color: var(--text-error);
   font-size: 13px;
@@ -1058,6 +1069,7 @@ canvas {
 
 .pw-tx-amount.is-income  { color: var(--pw-income); }
 .pw-tx-amount.is-expense { color: var(--pw-expense); }
+.pw-tx-amount.is-refund  { color: var(--pw-income); }
 
 .pw-tx-actions {
   display: flex;
