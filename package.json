@@ -1,6 +1,6 @@
 {
   "name": "penny-wallet",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Personal finance tracker Obsidian plugin",
   "main": "main.js",
   "scripts": {
