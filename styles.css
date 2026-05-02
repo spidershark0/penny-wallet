@@ -37,6 +37,17 @@
   -webkit-user-select: text;
 }
 
+/* Prevent native long-press copy/callout on interactive elements */
+.pw-tx-row,
+.pw-chart-wrap,
+.pw-pie-wrap,
+.pw-pie-canvas-wrap,
+canvas {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* ── Modal ── */
 
 /* Mobile: when any input in our modal is focused (keyboard visible),
