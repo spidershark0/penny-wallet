@@ -2,6 +2,16 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
+## [0.0.10] - 2026-05-02
+
+### Changed
+- Migrated to Chart.js for more stable rendering and reduced bundle size
+- Pie chart now merges small categories into "Others"; tap to drill down
+- Pie chart tooltip shows amount and percentage
+- Refactored transaction rows — action buttons are revealed on hover for a cleaner layout; on mobile, action buttons are always visible
+- Unified CSS color variables for consistent theming
+- Refactored shared components: Card, Metric styles
+
 ## [0.0.9] - 2026-04-17
 
 ### Added
