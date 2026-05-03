@@ -20,6 +20,9 @@ All notable changes to PennyWallet will be documented in this file.
 ### Removed
 - **Legacy refund category** — `credit_card_refund` transfer category removed (replaced by the negative-expense format above)
 
+### Internal
+- **Modal architecture refactor** — extracted 6 pure helpers (`parseAmountForEdit`, `validateTransactionForm`, `buildTransactionPayload`, `addTagToList`, `getCategoryOptions`, `getTransferWalletCandidates`) from `TransactionModal` into a dedicated `src/modal/transactionState.ts` module with 46 unit tests; deduplicated `MobileTransactionModal` against `TransactionModal` by lifting 4 stateful operations (`getActiveWallets`, `normalizeWalletForCategory`, `resetStateForType`, `getFormState`) to protected base-class methods; 10 verbatim duplicate sites collapsed; no user-visible behavior change
+
 ## [0.0.9] - 2026-04-17
 
 ### Added
