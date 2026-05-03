@@ -2,7 +2,13 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
-## [0.0.10] - 2026-05-02
+## [0.0.10] - 2026-05-03
+
+### Added
+- Refund support: expense transactions now accept negative amounts; a「這是退款」toggle in the expense form negates the amount on save
+- Refunds display as green `+amount` in the transaction list (distinct from regular expenses)
+- Migration script `scripts/migrate-refund.mjs` to convert legacy `transfer credit_card_refund` records to negative expense format
+- Income wallet selector now excludes credit card accounts
 
 ### Changed
 - Migrated to Chart.js for more stable rendering and reduced bundle size
@@ -11,6 +17,9 @@ All notable changes to PennyWallet will be documented in this file.
 - Refactored transaction rows — action buttons are revealed on hover for a cleaner layout; on mobile, action buttons are always visible
 - Unified CSS color variables for consistent theming
 - Refactored shared components: Card, Metric styles
+
+### Removed
+- `credit_card_refund` transfer category — replaced by negative expense amounts
 
 ## [0.0.9] - 2026-04-17
 
