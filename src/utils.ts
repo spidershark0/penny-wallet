@@ -27,3 +27,18 @@ export function validateTag(tag: string): boolean {
   const len = [...tag].length
   return hasCjk ? len <= 5 : len <= 10
 }
+
+export function formatHeroAmount(raw: string): string {
+  if (!raw) return '0'
+  const dotIdx = raw.indexOf('.')
+  const intPart = dotIdx === -1 ? raw : raw.slice(0, dotIdx)
+  const decPart = dotIdx === -1 ? null : raw.slice(dotIdx + 1)
+
+  const intNum = intPart === '' ? 0 : Number(intPart)
+  const intStr = Number.isFinite(intNum)
+    ? intNum.toLocaleString('en-US')
+    : intPart
+
+  if (dotIdx === -1) return intStr
+  return `${intStr}.${decPart}`
+}

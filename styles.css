@@ -8,6 +8,9 @@
   --pw-transfer: #85B7EB;
   --pw-payment: #AFA9EC;
 
+  /* Refund: lighter shade in income family */
+  --pw-refund: color-mix(in srgb, var(--pw-income) 65%, var(--background-primary) 35%);
+
   /* Type color tints (badge backgrounds) */
   --pw-income-tint: rgba(29, 158, 117, 0.12);
   --pw-expense-tint: rgba(216, 90, 48, 0.12);
@@ -49,6 +52,11 @@ canvas {
 }
 
 /* ── Modal ── */
+
+/* Remove Obsidian theme border from penny-wallet modals */
+.modal:has(.pw-modal) {
+  border: none;
+}
 
 /* Mobile: when any input in our modal is focused (keyboard visible),
    shift the modal to the top so it clears the keyboard.
@@ -111,8 +119,9 @@ canvas {
 .pw-mobile-top-bar {
   display: flex;
   align-items: center;
-  padding: env(safe-area-inset-top, 0px) 8px 8px;
-  min-height: 52px;
+  padding: env(safe-area-inset-top, 0px) 8px 6px;
+  min-height: 44px;
+  max-height: calc(48px + env(safe-area-inset-top, 0px));
   flex-shrink: 0;
   border-bottom: 1px solid var(--background-modifier-border);
 }
@@ -122,17 +131,32 @@ canvas {
   background: none;
   border: none;
   color: var(--text-normal);
-  font-size: 18px;
-  flex: 0 0 48px;
-  height: 48px;
+  font-size: 13px;
+  flex: 0 0 44px;
+  height: 44px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  outline: none;
+  box-shadow: none;
+  position: relative;
 }
 
-.pw-mobile-top-btn:active {
+/* 32×32 visible hit zone centred inside the 44×44 touch area */
+.pw-mobile-top-btn::after {
+  content: '';
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: background 0.1s;
+}
+
+.pw-mobile-top-btn:active::after {
   background: var(--background-modifier-hover);
 }
 
@@ -221,6 +245,11 @@ canvas {
   letter-spacing: 1px;
   min-height: 44px;
   line-height: 1.2;
+  transition: color 0.15s;
+}
+
+.pw-mobile-amount-display.is-empty {
+  color: var(--text-muted);
 }
 
 /* Error in mobile modal */
@@ -245,6 +274,10 @@ canvas {
   height: 48px;
   border-bottom: 1px solid var(--background-modifier-border);
   position: relative;
+}
+
+.pw-mobile-refund-row {
+  padding-left: 36px;
 }
 
 .pw-mobile-row-label {
@@ -404,6 +437,7 @@ canvas {
 
 .pw-modal h2 {
   margin-bottom: 16px;
+  color: var(--text-normal);
 }
 
 .pw-type-tabs {
@@ -416,25 +450,29 @@ canvas {
 .pw-type-tab {
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid var(--interactive-accent);
+  border: 1px solid var(--background-modifier-border);
   background: transparent;
-  color: var(--text-normal);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+  box-shadow: none;
 }
 
 .pw-type-tab:hover {
-  background: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 .pw-type-tab.is-active {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
 }
 
 .pw-type-tab.is-active:hover {
-  background: var(--interactive-accent-hover);
+  background: var(--background-secondary);
 }
 
 .pw-fields {
@@ -448,6 +486,12 @@ canvas {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pw-field-row:last-child {
+  border-bottom: none;
 }
 
 .pw-field-label {
@@ -479,9 +523,15 @@ canvas {
   height: 16px;
   min-height: unset;
   padding: 0;
-  border: none;
-  background: none;
+  margin-left: auto;
+  margin-right: 0;
   cursor: pointer;
+}
+
+.pw-refund-row {
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--background-modifier-border);
+  margin-left: 2px;
 }
 
 .pw-error {
@@ -498,6 +548,18 @@ canvas {
   gap: 8px;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+.pw-btn-row button:not(.mod-cta) {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.pw-btn-row button:not(.mod-cta):hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
 }
 
 /* ── Dashboard ── */
@@ -1069,7 +1131,7 @@ canvas {
 
 .pw-tx-amount.is-income  { color: var(--pw-income); }
 .pw-tx-amount.is-expense { color: var(--pw-expense); }
-.pw-tx-amount.is-refund  { color: var(--pw-income); }
+.pw-tx-amount.is-refund  { color: var(--pw-refund); }
 
 .pw-tx-actions {
   display: flex;
@@ -1740,6 +1802,13 @@ select.pw-add-wallet-input {
   color: var(--text-faint);
   font-size: 13px;
   line-height: 1;
+  padding: 8px;
+  margin: -8px -4px -8px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  min-height: 16px;
 }
 
 .pw-tag-chip-remove:hover {

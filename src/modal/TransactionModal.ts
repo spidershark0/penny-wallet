@@ -189,6 +189,11 @@ export class TransactionModal extends Modal {
       }, { passive: true })
     }
 
+    // Refund row first (expense only) — sub-option of the type tab, visually adjacent.
+    if (this.type === 'expense') {
+      this.addRefundRow(this.fieldsEl)
+    }
+
     // Date field (always shown)
     this.addField(this.fieldsEl, t('modal.date'), () => {
       const input = createEl('input', { type: 'date' })
@@ -229,16 +234,6 @@ export class TransactionModal extends Modal {
         return sel
       })
 
-      if (this.type === 'expense') {
-        this.addField(this.fieldsEl, t('modal.isRefund'), () => {
-          const checkbox = createEl('input', { type: 'checkbox' })
-          checkbox.checked = this.isRefund
-          checkbox.addEventListener('change', () => {
-            this.isRefund = checkbox.checked
-          })
-          return checkbox
-        })
-      }
     } else {
       const categories = this.getCategoryOptions(config)
       this.addField(this.fieldsEl, t('modal.category'), () => {
@@ -329,6 +324,20 @@ export class TransactionModal extends Modal {
     const input = buildInput()
     input.addClass('pw-field-input')
     row.appendChild(input)
+  }
+
+  private addRefundRow(container: HTMLElement) {
+    const row = container.createDiv('pw-field-row pw-refund-row')
+    const checkboxId = 'pw-refund-checkbox'
+    row.createEl('label', { text: t('modal.isRefund'), cls: 'pw-field-label', attr: { for: checkboxId } })
+    const checkbox = createEl('input', { type: 'checkbox' })
+    checkbox.id = checkboxId
+    checkbox.checked = this.isRefund
+    checkbox.addClass('pw-field-input')
+    checkbox.addEventListener('change', () => {
+      this.isRefund = checkbox.checked
+    })
+    row.appendChild(checkbox)
   }
 
   private buildTagInput(availableTags: string[]): HTMLElement {

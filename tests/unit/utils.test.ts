@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { stepMonth, isAfterCurrentMonth, formatAmount, validateTag } from '../../src/utils'
+import { stepMonth, isAfterCurrentMonth, formatAmount, validateTag, formatHeroAmount } from '../../src/utils'
 import { dateToYearMonth, dateToMonthDay } from '../../src/io/WalletFile'
 
 // ── stepMonth ─────────────────────────────────────────────────────────────────
@@ -140,5 +140,43 @@ describe('validateTag', () => {
   })
   it('rejects whitespace-only tag', () => {
     expect(validateTag('  ')).toBe(false)
+  })
+})
+
+describe('formatHeroAmount', () => {
+  it('returns "0" for empty string', () => {
+    expect(formatHeroAmount('')).toBe('0')
+  })
+
+  it('returns "0" for "0"', () => {
+    expect(formatHeroAmount('0')).toBe('0')
+  })
+
+  it('formats integer with thousand separators', () => {
+    expect(formatHeroAmount('1234')).toBe('1,234')
+  })
+
+  it('formats large integer with multiple separators', () => {
+    expect(formatHeroAmount('1234567')).toBe('1,234,567')
+  })
+
+  it('preserves trailing dot mid-input', () => {
+    expect(formatHeroAmount('1234.')).toBe('1,234.')
+  })
+
+  it('preserves single decimal digit', () => {
+    expect(formatHeroAmount('1234.5')).toBe('1,234.5')
+  })
+
+  it('preserves trailing zero in decimal', () => {
+    expect(formatHeroAmount('1234.50')).toBe('1,234.50')
+  })
+
+  it('formats decimals less than 1', () => {
+    expect(formatHeroAmount('0.05')).toBe('0.05')
+  })
+
+  it('handles "0." mid-input', () => {
+    expect(formatHeroAmount('0.')).toBe('0.')
   })
 })

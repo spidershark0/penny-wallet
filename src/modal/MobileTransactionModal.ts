@@ -1,7 +1,7 @@
 import { TransactionType, PennyWalletConfig } from '../types'
 import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
-import { validateTag } from '../utils'
+import { validateTag, formatHeroAmount } from '../utils'
 
 export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
@@ -90,6 +90,19 @@ export class MobileTransactionModal extends TransactionModal {
     this.mobileRowsEl.empty()
     const activeWallets = config.wallets.filter(w => w.status === 'active')
 
+    // Refund toggle first (expense only) — sub-option of the type tab, visually adjacent.
+    if (this.type === 'expense') {
+      const refundRow = this.mobileRowsEl.createDiv('pw-mobile-row pw-mobile-refund-row')
+      const checkboxId = 'pw-mobile-refund-checkbox'
+      refundRow.createEl('label', { cls: 'pw-mobile-row-label', text: t('modal.isRefund'), attr: { for: checkboxId } })
+      const checkbox = refundRow.createEl('input', { type: 'checkbox' })
+      checkbox.id = checkboxId
+      checkbox.checked = this.isRefund
+      checkbox.addEventListener('change', () => {
+        this.isRefund = checkbox.checked
+      })
+    }
+
     // Date Picker
     let dateInput!: HTMLInputElement
     this.addMobilePickerRow(
@@ -146,16 +159,6 @@ export class MobileTransactionModal extends TransactionModal {
         return sel
       })
 
-      // Refund toggle (expense only)
-      if (this.type === 'expense') {
-        const refundRow = this.mobileRowsEl.createDiv('pw-mobile-row')
-        refundRow.createEl('span', { cls: 'pw-mobile-row-label', text: t('modal.isRefund') })
-        const checkbox = refundRow.createEl('input', { type: 'checkbox' })
-        checkbox.checked = this.isRefund
-        checkbox.addEventListener('change', () => {
-          this.isRefund = checkbox.checked
-        })
-      }
     } else {
       // Category
       const categories = this.getCategoryOptions(config)
@@ -463,7 +466,9 @@ export class MobileTransactionModal extends TransactionModal {
 
   private updateAmountDisplay() {
     if (!this.mobileAmountEl) return
-    this.mobileAmountEl.textContent = this.amount || '0'
+    const isEmpty = this.amount === ''
+    this.mobileAmountEl.textContent = 'NT$ ' + formatHeroAmount(this.amount)
+    this.mobileAmountEl.toggleClass('is-empty', isEmpty)
   }
 
   private formatMobileDate(): string {
