@@ -28,6 +28,7 @@ export class TransactionModal extends Modal {
   private typeTabsEl!: HTMLElement
   private fieldsEl!: HTMLElement
   protected errorEl!: HTMLElement
+  private amountPrefixEl: HTMLElement | null = null
 
   constructor(
     app: App,
@@ -165,6 +166,7 @@ export class TransactionModal extends Modal {
 
   private renderFields(config: PennyWalletConfig, autoFocus = true) {
     this.fieldsEl.empty()
+    this.amountPrefixEl = null
 
     // Remove keyboard-open class on touchstart so modal repositions BEFORE the native picker opens.
     const onPickerTouch = (el: HTMLElement) => {
@@ -279,18 +281,23 @@ export class TransactionModal extends Modal {
       return input
     })
 
-    this.addField(this.fieldsEl, t('modal.amount'), () => {
-      const dp = this.walletFile.getConfig().decimalPlaces ?? 0
-      const input = createEl('input', { type: 'number', placeholder: dp === 2 ? '0.00' : '0' })
-      input.value = this.amount
-      input.setAttribute('min', '0')
-      input.setAttribute('step', dp === 2 ? '0.01' : '1')
-      input.setAttribute('enterkeyhint', 'done')
-      input.addEventListener('input', () => { this.amount = input.value })
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur() })
-      if (autoFocus) setTimeout(() => input.focus(), 50) // wait for modal open animation to complete
-      return input
+    const amountRow = this.fieldsEl.createDiv('pw-field-row')
+    amountRow.createEl('label', { text: t('modal.amount'), cls: 'pw-field-label' })
+    const amountWrapper = amountRow.createDiv('pw-amount-field-wrapper pw-field-input')
+    this.amountPrefixEl = amountWrapper.createSpan({ cls: 'pw-amount-prefix', text: '+' })
+    const dp = this.walletFile.getConfig().decimalPlaces ?? 0
+    const amountInput = amountWrapper.createEl('input', { type: 'number', placeholder: dp === 2 ? '0.00' : '0' })
+    amountInput.value = this.amount
+    amountInput.setAttribute('min', '0')
+    amountInput.setAttribute('step', dp === 2 ? '0.01' : '1')
+    amountInput.setAttribute('enterkeyhint', 'done')
+    amountInput.addEventListener('input', () => {
+      this.amount = amountInput.value
+      this.updateDesktopAmountPrefix()
     })
+    amountInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') amountInput.blur() })
+    this.updateDesktopAmountPrefix()
+    if (autoFocus) setTimeout(() => amountInput.focus(), 50) // wait for modal open animation to complete
   }
 
   private addField(container: HTMLElement, label: string, buildInput: () => HTMLElement) {
@@ -302,7 +309,9 @@ export class TransactionModal extends Modal {
   }
 
   private addRefundRow(container: HTMLElement) {
-    const row = container.createDiv('pw-field-row pw-refund-row')
+    const block = container.createDiv('pw-refund-block')
+    const row = block.createDiv('pw-field-row pw-refund-row')
+    row.setAttribute('title', t('modal.isRefund.hint'))
     const checkboxId = 'pw-refund-checkbox'
     row.createEl('label', { text: t('modal.isRefund'), cls: 'pw-field-label', attr: { for: checkboxId } })
     const checkbox = createEl('input', { type: 'checkbox' })
@@ -311,8 +320,15 @@ export class TransactionModal extends Modal {
     checkbox.addClass('pw-field-input')
     checkbox.addEventListener('change', () => {
       this.isRefund = checkbox.checked
+      this.updateDesktopAmountPrefix()
     })
     row.appendChild(checkbox)
+  }
+
+  private updateDesktopAmountPrefix() {
+    if (!this.amountPrefixEl) return
+    const shouldShow = this.isRefund && this.amount !== ''
+    this.amountPrefixEl.toggleClass('is-visible', shouldShow)
   }
 
   private buildTagInput(availableTags: string[]): HTMLElement {

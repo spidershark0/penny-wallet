@@ -86,7 +86,8 @@ export class MobileTransactionModal extends TransactionModal {
 
     // Refund toggle first (expense only) — sub-option of the type tab, visually adjacent.
     if (this.type === 'expense') {
-      const refundRow = this.mobileRowsEl.createDiv('pw-mobile-row pw-mobile-refund-row')
+      const block = this.mobileRowsEl.createDiv('pw-refund-block')
+      const refundRow = block.createDiv('pw-mobile-row pw-mobile-refund-row')
       const checkboxId = 'pw-mobile-refund-checkbox'
       refundRow.createEl('label', { cls: 'pw-mobile-row-label', text: t('modal.isRefund'), attr: { for: checkboxId } })
       const checkbox = refundRow.createEl('input', { type: 'checkbox' })
@@ -94,7 +95,9 @@ export class MobileTransactionModal extends TransactionModal {
       checkbox.checked = this.isRefund
       checkbox.addEventListener('change', () => {
         this.isRefund = checkbox.checked
+        this.updateAmountDisplay()
       })
+      block.createDiv({ cls: 'pw-mobile-refund-hint-row', text: t('modal.isRefund.hint') })
     }
 
     // Date Picker
@@ -452,7 +455,8 @@ export class MobileTransactionModal extends TransactionModal {
   private updateAmountDisplay() {
     if (!this.mobileAmountEl) return
     const isEmpty = this.amount === ''
-    this.mobileAmountEl.textContent = 'NT$ ' + formatHeroAmount(this.amount)
+    const refundPrefix = (this.isRefund && !isEmpty) ? '+ ' : ''
+    this.mobileAmountEl.textContent = '$'+`${refundPrefix}${formatHeroAmount(this.amount)}`
     this.mobileAmountEl.toggleClass('is-empty', isEmpty)
   }
 

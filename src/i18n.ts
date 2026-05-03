@@ -107,6 +107,7 @@ const translations = {
     'modal.done': '完成',
     'modal.amount': '金額',
     'modal.isRefund': '這是退款',
+    'modal.isRefund.hint': '金額會記為負支出（用於退貨、退款場景）',
 
     // Validation errors
     'err.amountRequired': '請輸入金額',
@@ -298,6 +299,7 @@ const translations = {
     'modal.done': 'Done',
     'modal.amount': 'Amount',
     'modal.isRefund': 'This is a refund',
+    'modal.isRefund.hint': 'Stored as a negative expense (for refunds and returns)',
 
     'err.amountRequired': 'Amount is required',
     'err.amountPositive': 'Amount must be greater than 0',

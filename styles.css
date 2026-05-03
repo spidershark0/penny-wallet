@@ -238,8 +238,8 @@ canvas {
 }
 
 .pw-mobile-amount-display {
-  font-size: 36px;
-  font-weight: 300;
+  font-size: 48px;
+  font-weight: 500;
   color: var(--text-normal);
   font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
@@ -276,8 +276,16 @@ canvas {
   position: relative;
 }
 
-.pw-mobile-refund-row {
-  padding-left: 36px;
+.pw-mobile-refund-hint-row {
+  padding: 6px 20px 8px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pw-refund-block .pw-mobile-row {
+  padding-left: 0;
 }
 
 .pw-mobile-row-label {
@@ -528,10 +536,60 @@ canvas {
   cursor: pointer;
 }
 
-.pw-refund-row {
-  padding-left: 1.5rem;
+.pw-refund-block {
+  margin-left: 24px;
+  padding: 8px 0 8px 12px;
   border-left: 2px solid var(--background-modifier-border);
-  margin-left: 2px;
+}
+
+.pw-refund-row .pw-field-input[type="checkbox"] {
+  margin-left: 0;
+}
+
+.pw-amount-field-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pw-amount-field-wrapper input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  outline: none;
+  min-height: unset;
+  color: inherit;
+  font-size: inherit;
+}
+
+.pw-tag-input-wrapper.pw-field-input,
+.pw-amount-field-wrapper.pw-field-input {
+  padding: 0 8px;
+}
+
+.pw-tag-input-wrapper input:focus,
+.pw-amount-field-wrapper input:focus {
+  box-shadow: none;
+}
+
+.pw-tag-input-wrapper:focus-within,
+.pw-amount-field-wrapper:focus-within {
+  border-color: var(--background-modifier-border-focus);
+  box-shadow: 0 0 0 var(--input-border-width-focus) var(--background-modifier-border-focus);
+}
+
+.pw-amount-prefix {
+  color: var(--pw-refund);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  display: none;
+}
+
+.pw-amount-prefix.is-visible {
+  display: inline;
 }
 
 .pw-error {
