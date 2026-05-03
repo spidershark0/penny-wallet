@@ -5,21 +5,20 @@ All notable changes to PennyWallet will be documented in this file.
 ## [0.0.10] - 2026-05-03
 
 ### Added
-- Refund support: expense transactions now accept negative amounts; a「這是退款」toggle in the expense form negates the amount on save
-- Refunds display as green `+amount` in the transaction list (distinct from regular expenses)
-- Migration script `scripts/migrate-refund.mjs` to convert legacy `transfer credit_card_refund` records to negative expense format
-- Income wallet selector now excludes credit card accounts
+- **Refund as negative expense** — new「這是退款」toggle in the expense form saves the transaction with a negative amount; refunds render as a lighter green `+amount` in the list, distinguishable from regular income at a glance; migration script `scripts/migrate-refund.mjs` converts legacy `transfer credit_card_refund` records to the new format
+- **Income wallet selector** — credit card accounts are now excluded from the income wallet picker
 
 ### Changed
-- Migrated to Chart.js for more stable rendering and reduced bundle size
-- Pie chart now merges small categories into "Others"; tap to drill down
-- Pie chart tooltip shows amount and percentage
-- Refactored transaction rows — action buttons are revealed on hover for a cleaner layout; on mobile, action buttons are always visible
-- Unified CSS color variables for consistent theming
-- Refactored shared components: Card, Metric styles
+- **Transaction modal visual refresh** — single accent colour (only Confirm is blue, title / type tabs / Cancel all neutral grey); refund toggle moved to the first field under the type tabs and indented as a sub-option of "expense"; mobile amount hero shows `NT$`-prefixed thousand-separated numbers (muted when empty, full-contrast when typed); mobile top buttons shrunk to 32 × 32 visible / 44 pt touch; tag chip × hit area enlarged via padding without changing visible size
+- **Charts** — migrated to Chart.js for more stable rendering and a smaller bundle; pie chart merges small categories into "Others" with tap-to-drill-down; tooltip now shows amount and percentage
+- **Transaction list** — action buttons reveal on hover (desktop) / stay visible (mobile) for a cleaner default layout
+- **Shared styling** — unified CSS colour tokens; refactored shared `Card` and `Metric` components
+
+### Fixed
+- **Modal polish** — removed stray outer border inherited from Obsidian theme; restored checkbox appearance so it renders correctly across themes; added consistent separator lines between field rows; suppressed Obsidian's purple focus outline on type tabs
 
 ### Removed
-- `credit_card_refund` transfer category — replaced by negative expense amounts
+- **Legacy refund category** — `credit_card_refund` transfer category removed (replaced by the negative-expense format above)
 
 ## [0.0.9] - 2026-04-17
 
