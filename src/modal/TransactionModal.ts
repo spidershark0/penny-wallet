@@ -1,8 +1,8 @@
 import { App, Modal, Notice } from 'obsidian'
 import { Transaction, TransactionType, TransactionModalParams, PennyWalletConfig } from '../types'
-import { WalletFile, dateToMonthDay, dateToYearMonth } from '../io/WalletFile'
-import { t, translateCategory } from '../i18n'
-import { validateTag } from '../utils'
+import { WalletFile, dateToYearMonth } from '../io/WalletFile'
+import { t } from '../i18n'
+import { parseAmountForEdit, getCategoryOptions as getCategoryOptionsFromState, addTagToList, validateTransactionForm, buildTransactionPayload, getTransferWalletCandidates, type TransactionFormState } from './transactionState'
 
 export class TransactionModal extends Modal {
   protected walletFile: WalletFile
@@ -67,15 +67,13 @@ export class TransactionModal extends Modal {
       this.category = tx.category ?? ''
       this.note = tx.note
       this.tags = tx.tags ? [...tx.tags] : []
-      this.amount = String(tx.amount)
-      if (tx.amount < 0) {
-        this.isRefund = true
-        this.amount = String(-tx.amount)
-      }
+      const parsed = parseAmountForEdit(tx.amount)
+      this.amount = parsed.display
+      this.isRefund = parsed.isRefund
     } else {
       this.type = (this.params.type as TransactionType) ?? 'expense'
       this.date = this.params.date ?? todayString()
-      const activeWallets = config.wallets.filter(w => w.status === 'active')
+      const activeWallets = this.getActiveWallets(config)
       const defaultWallet = activeWallets.find(w => w.name === config.defaultWallet)
         ?? activeWallets[0]
       this.wallet = this.params.wallet ?? defaultWallet?.name ?? ''
@@ -149,14 +147,7 @@ export class TransactionModal extends Modal {
       tab.addEventListener('touchend', (e) => {
         e.preventDefault()
         this.containerEl.removeClass('pw-modal-keyboard-open')
-        this.type = tp
-        if (tp !== 'expense') this.isRefund = false
-        if (tp === 'expense' || tp === 'income') {
-          this.fromWallet = ''
-          this.toWallet = ''
-        } else {
-          this.wallet = ''
-        }
+        this.resetStateForType(tp)
         Array.from(this.typeTabsEl.children).forEach((el, i) => {
           el.classList.toggle('is-active', types[i] === tp)
         })
@@ -165,14 +156,7 @@ export class TransactionModal extends Modal {
         setTimeout(() => this.renderTypeTabs(), 50)
       })
       tab.addEventListener('click', () => {
-        this.type = tp
-        if (tp !== 'expense') this.isRefund = false
-        if (tp === 'expense' || tp === 'income') {
-          this.fromWallet = ''
-          this.toWallet = ''
-        } else {
-          this.wallet = ''
-        }
+        this.resetStateForType(tp)
         this.renderTypeTabs()
         this.renderFields(this.walletFile.getConfig(), false)
       })
@@ -203,7 +187,7 @@ export class TransactionModal extends Modal {
       return input
     })
 
-    const activeWallets = config.wallets.filter(w => w.status === 'active')
+    const activeWallets = this.getActiveWallets(config)
 
     if (this.type === 'expense' || this.type === 'income') {
       const categories = this.getCategoryOptions(config)
@@ -252,19 +236,10 @@ export class TransactionModal extends Modal {
       })
 
       // Normalize wallet state when category constrains wallet types
-      if (this.category === 'credit_card_payment') {
-        const fromType = config.wallets.find(w => w.name === this.fromWallet)?.type
-        const toType   = config.wallets.find(w => w.name === this.toWallet)?.type
-        if (fromType === 'creditCard') this.fromWallet = ''
-        if (toType && toType !== 'creditCard') this.toWallet = ''
-      }
+      this.normalizeWalletForCategory(config)
 
-      const fromWallets = this.category === 'credit_card_payment'
-        ? activeWallets.filter(w => w.type !== 'creditCard')
-        : activeWallets
-      const toWallets = this.category === 'credit_card_payment'
-        ? activeWallets.filter(w => w.type === 'creditCard')
-        : activeWallets
+      const { fromCandidates: fromWallets, toCandidates: toWallets }
+        = getTransferWalletCandidates(activeWallets, this.category)
 
       this.addField(this.fieldsEl, t('modal.fromWallet'), () => {
         const sel = createEl('select')
@@ -385,16 +360,24 @@ export class TransactionModal extends Modal {
     }
 
     const addTag = (value?: string) => {
-      const raw = (value ?? input.value).replace(/^#/, '').trim()
-      if (!raw) return
-      if (!validateTag(raw)) { input.value = ''; dropdown.hide(); return }
-      if (this.tags.includes(raw)) { input.value = ''; dropdown.hide(); return }
-      if (this.tags.length >= 3) return
-      this.tags = [...this.tags, raw]
-      input.value = ''
-      dropdown.hide()
-      renderChips()
-      if (this.tags.length >= 3) input.setAttribute('disabled', 'true')
+      const result = addTagToList(this.tags, value ?? input.value)
+      switch (result.kind) {
+        case 'empty':
+        case 'max':
+          return
+        case 'invalid':
+        case 'duplicate':
+          input.value = ''
+          dropdown.hide()
+          return
+        case 'added':
+          this.tags = result.next
+          input.value = ''
+          dropdown.hide()
+          renderChips()
+          if (this.tags.length >= 3) input.setAttribute('disabled', 'true')
+          return
+      }
     }
 
     input.addEventListener('input', updateDropdown)
@@ -413,20 +396,31 @@ export class TransactionModal extends Modal {
     return wrapper
   }
 
+  protected getActiveWallets(config: PennyWalletConfig) {
+    return config.wallets.filter(w => w.status === 'active')
+  }
+
+  protected normalizeWalletForCategory(config: PennyWalletConfig): void {
+    if (this.category !== 'credit_card_payment') return
+    const fromType = config.wallets.find(w => w.name === this.fromWallet)?.type
+    const toType   = config.wallets.find(w => w.name === this.toWallet)?.type
+    if (fromType === 'creditCard') this.fromWallet = ''
+    if (toType && toType !== 'creditCard') this.toWallet = ''
+  }
+
+  protected resetStateForType(newType: TransactionType): void {
+    this.type = newType
+    if (newType !== 'expense') this.isRefund = false
+    if (newType === 'expense' || newType === 'income') {
+      this.fromWallet = ''
+      this.toWallet = ''
+    } else {
+      this.wallet = ''
+    }
+  }
+
   protected getCategoryOptions(config: PennyWalletConfig): { key: string; label: string }[] {
-    const catOptions = this.type === 'expense'
-      ? config.options.categories.expense
-      : this.type === 'income'
-        ? config.options.categories.income
-        : config.options.categories.transfer
-
-    const defaultKeys = catOptions.default
-    const customs = catOptions.custom
-
-    return [
-      ...defaultKeys.map(key => ({ key, label: translateCategory(key) })),
-      ...customs.map(c => ({ key: c, label: c })),
-    ]
+    return getCategoryOptionsFromState(config, this.type)
   }
 
   protected showError(msg: string) {
@@ -438,28 +432,27 @@ export class TransactionModal extends Modal {
     this.errorEl.hide()
   }
 
+  protected getFormState(): TransactionFormState {
+    return {
+      date: this.date,
+      type: this.type,
+      wallet: this.wallet,
+      fromWallet: this.fromWallet,
+      toWallet: this.toWallet,
+      category: this.category,
+      note: this.note,
+      tags: this.tags,
+      amount: this.amount,
+      isRefund: this.isRefund,
+    }
+  }
+
   private validate(): boolean {
     this.clearError()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(this.date)) { this.showError(t('err.invalidDate')); return false }
-    const dp = this.walletFile.getConfig().decimalPlaces ?? 0
-    const amount = parseFloat(this.amount)
-    if (!this.amount || isNaN(amount)) { this.showError(t('err.amountRequired')); return false }
-    if (amount <= 0) { this.showError(t('err.amountPositive')); return false }
-    if (dp === 0 && !Number.isInteger(amount)) { this.showError(t('err.amountInteger')); return false }
-
-    if (this.type === 'expense' || this.type === 'income') {
-      if (!this.wallet) { this.showError(t('err.walletRequired')); return false }
-    } else {
-      if (!this.fromWallet) { this.showError(t('err.fromWalletRequired')); return false }
-      if (!this.toWallet) { this.showError(t('err.toWalletRequired')); return false }
-      if (this.category === 'credit_card_payment') {
-        const cfg = this.walletFile.getConfig()
-        const fromType = cfg.wallets.find(w => w.name === this.fromWallet)?.type
-        const toType   = cfg.wallets.find(w => w.name === this.toWallet)?.type
-        if (fromType === 'creditCard') { this.showError(t('err.fromMustNotBeCreditCard')); return false }
-        if (toType !== 'creditCard')   { this.showError(t('err.toMustBeCreditCard')); return false }
-      }
-      if (this.fromWallet === this.toWallet) { this.showError(t('err.sameWallet')); return false }
+    const result = validateTransactionForm(this.getFormState(), this.walletFile.getConfig())
+    if (!result.ok) {
+      this.showError(t(result.errorKey))
+      return false
     }
     return true
   }
@@ -467,18 +460,7 @@ export class TransactionModal extends Modal {
   protected async handleConfirm() {
     if (!this.validate()) return
 
-    const newTx: Transaction = {
-      date: dateToMonthDay(this.date),
-      type: this.type,
-      wallet:     (this.type === 'expense' || this.type === 'income') ? this.wallet : undefined,
-      fromWallet: this.type === 'transfer' ? this.fromWallet : undefined,
-      toWallet:   this.type === 'transfer' ? this.toWallet : undefined,
-      category:   this.category || undefined,
-      note: this.note,
-      amount: this.isRefund ? -parseFloat(this.amount) : parseFloat(this.amount),
-      tags: this.tags.length ? this.tags : undefined,
-    }
-
+    const newTx = buildTransactionPayload(this.getFormState())
     const newYearMonth = dateToYearMonth(this.date)
 
     try {

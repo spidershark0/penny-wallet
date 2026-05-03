@@ -2,6 +2,7 @@ import { TransactionType, PennyWalletConfig } from '../types'
 import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
 import { validateTag, formatHeroAmount } from '../utils'
+import { getTransferWalletCandidates } from './transactionState'
 
 export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
@@ -72,14 +73,7 @@ export class MobileTransactionModal extends TransactionModal {
         cls: 'pw-mobile-tab' + (this.type === tp ? ' is-active' : ''),
       })
       tab.addEventListener('click', () => {
-        this.type = tp
-        if (tp !== 'expense') this.isRefund = false
-        if (tp === 'expense' || tp === 'income') {
-          this.fromWallet = ''
-          this.toWallet = ''
-        } else {
-          this.wallet = ''
-        }
+        this.resetStateForType(tp)
         this.renderMobileTabs(config)
         this.renderMobileRows(config)
       })
@@ -88,7 +82,7 @@ export class MobileTransactionModal extends TransactionModal {
 
   private renderMobileRows(config: PennyWalletConfig) {
     this.mobileRowsEl.empty()
-    const activeWallets = config.wallets.filter(w => w.status === 'active')
+    const activeWallets = this.getActiveWallets(config)
 
     // Refund toggle first (expense only) — sub-option of the type tab, visually adjacent.
     if (this.type === 'expense') {
@@ -181,19 +175,10 @@ export class MobileTransactionModal extends TransactionModal {
       })
 
       // Normalize wallet state when category constrains wallet types
-      if (this.category === 'credit_card_payment') {
-        const fromType = config.wallets.find(w => w.name === this.fromWallet)?.type
-        const toType   = config.wallets.find(w => w.name === this.toWallet)?.type
-        if (fromType === 'creditCard') this.fromWallet = ''
-        if (toType && toType !== 'creditCard') this.toWallet = ''
-      }
+      this.normalizeWalletForCategory(config)
 
-      const fromWallets = this.category === 'credit_card_payment'
-        ? activeWallets.filter(w => w.type !== 'creditCard')
-        : activeWallets
-      const toWallets = this.category === 'credit_card_payment'
-        ? activeWallets.filter(w => w.type === 'creditCard')
-        : activeWallets
+      const { fromCandidates: fromWallets, toCandidates: toWallets }
+        = getTransferWalletCandidates(activeWallets, this.category)
 
       // From wallet
       this.addMobilePickerRow(this.mobileRowsEl, t('modal.fromWallet'), this.fromWallet || '—', (valueEl) => {
