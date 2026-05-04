@@ -312,7 +312,6 @@ export class MobileTransactionModal extends TransactionModal {
       kbToolbar.show()
       updateMobDropdown()
       setTimeout(() => {
-        tagInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
         repositionMobDropdown()
       }, 300)
     })

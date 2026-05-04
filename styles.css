@@ -340,6 +340,15 @@ canvas {
   display: none;
 }
 
+/* iOS WKWebView doesn't shrink viewport when keyboard rises; pad the scroll
+   container so scrollIntoView has room to lift the focused row above the keyboard. */
+@media (pointer: coarse) {
+  .pw-mobile-content:has(.pw-mobile-note-input:focus) .pw-mobile-rows,
+  .pw-mobile-content:has(.pw-tag-input:focus) .pw-mobile-rows {
+    padding-bottom: 60vh;
+  }
+}
+
 /* Keyboard dismiss toolbar — sits above iOS software keyboard via position:fixed */
 .pw-kb-toolbar {
   position: fixed;
