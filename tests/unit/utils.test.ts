@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { stepMonth, isAfterCurrentMonth, formatAmount, validateTag, formatHeroAmount } from '../../src/utils'
+import { stepMonth, isAfterCurrentMonth, formatAmount, validateTag, formatHeroAmount, formatMobileHeroAmount } from '../../src/utils'
 import { dateToYearMonth, dateToMonthDay } from '../../src/io/WalletFile'
 
 // ── stepMonth ─────────────────────────────────────────────────────────────────
@@ -178,5 +178,11 @@ describe('formatHeroAmount', () => {
 
   it('handles "0." mid-input', () => {
     expect(formatHeroAmount('0.')).toBe('0.')
+  })
+})
+
+describe('formatMobileHeroAmount', () => {
+  it('puts refund plus before currency symbol', () => {
+    expect(formatMobileHeroAmount('123', true)).toBe('+ $123')
   })
 })

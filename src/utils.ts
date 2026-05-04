@@ -42,3 +42,8 @@ export function formatHeroAmount(raw: string): string {
   if (dotIdx === -1) return intStr
   return `${intStr}.${decPart}`
 }
+
+export function formatMobileHeroAmount(raw: string, isRefund: boolean): string {
+  const amount = `$${formatHeroAmount(raw)}`
+  return isRefund && raw !== '' ? `+ ${amount}` : amount
+}

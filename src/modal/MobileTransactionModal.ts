@@ -1,7 +1,7 @@
 import { TransactionType, PennyWalletConfig } from '../types'
 import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
-import { validateTag, formatHeroAmount } from '../utils'
+import { validateTag, formatMobileHeroAmount } from '../utils'
 import { getTransferWalletCandidates } from './transactionState'
 
 export class MobileTransactionModal extends TransactionModal {
@@ -454,8 +454,7 @@ export class MobileTransactionModal extends TransactionModal {
   private updateAmountDisplay() {
     if (!this.mobileAmountEl) return
     const isEmpty = this.amount === ''
-    const refundPrefix = (this.isRefund && !isEmpty) ? '+ ' : ''
-    this.mobileAmountEl.textContent = '$'+`${refundPrefix}${formatHeroAmount(this.amount)}`
+    this.mobileAmountEl.textContent = formatMobileHeroAmount(this.amount, this.isRefund)
     this.mobileAmountEl.toggleClass('is-empty', isEmpty)
   }
 
