@@ -534,6 +534,34 @@ canvas {
   border-color: var(--interactive-accent);
 }
 
+.pw-select-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.pw-select-wrapper::after {
+  content: '▾';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.pw-select-wrapper > select.pw-field-input {
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+}
+
+.pw-select-wrapper > select.pw-field-input:hover {
+  background: var(--background-modifier-hover);
+}
+
 .pw-field-input[type="checkbox"] {
   flex: none;
   width: 16px;

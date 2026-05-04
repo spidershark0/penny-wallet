@@ -29,6 +29,7 @@ export class TransactionModal extends Modal {
   private fieldsEl!: HTMLElement
   protected errorEl!: HTMLElement
   private amountPrefixEl: HTMLElement | null = null
+  private isConfirming = false
 
   constructor(
     app: App,
@@ -120,6 +121,12 @@ export class TransactionModal extends Modal {
     // Also fix Obsidian's built-in X close button
     const closeBtn = this.modalEl.querySelector<HTMLElement>('.modal-close-button')
     closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); this.close() })
+
+    this.contentEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      this.close()
+    })
 
     // Sync modal position with keyboard visibility:
     // - text/number input focused → keyboard opens → modal moves to top
@@ -295,7 +302,15 @@ export class TransactionModal extends Modal {
       this.amount = amountInput.value
       this.updateDesktopAmountPrefix()
     })
-    amountInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') amountInput.blur() })
+    amountInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return
+      e.preventDefault()
+      if (!this.amount) {
+        amountInput.blur()
+        return
+      }
+      void this.handleConfirm()
+    })
     this.updateDesktopAmountPrefix()
     if (autoFocus) setTimeout(() => amountInput.focus(), 50) // wait for modal open animation to complete
   }
@@ -305,6 +320,11 @@ export class TransactionModal extends Modal {
     row.createEl('label', { text: label, cls: 'pw-field-label' })
     const input = buildInput()
     input.addClass('pw-field-input')
+    if (input instanceof HTMLSelectElement) {
+      const wrapper = row.createDiv('pw-select-wrapper')
+      wrapper.appendChild(input)
+      return
+    }
     row.appendChild(input)
   }
 
@@ -400,7 +420,12 @@ export class TransactionModal extends Modal {
     input.addEventListener('focus', updateDropdown)
     input.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag() }
-      if (e.key === 'Escape') dropdown.hide()
+      if (e.key === 'Escape') {
+        if (!dropdown.isShown()) return
+        e.preventDefault()
+        e.stopPropagation()
+        dropdown.hide()
+      }
     })
     input.addEventListener('blur', () => {
       setTimeout(() => dropdown.hide(), 150)
@@ -474,7 +499,9 @@ export class TransactionModal extends Modal {
   }
 
   protected async handleConfirm() {
+    if (this.isConfirming) return
     if (!this.validate()) return
+    this.isConfirming = true
 
     const newTx = buildTransactionPayload(this.getFormState())
     const newYearMonth = dateToYearMonth(this.date)
@@ -494,6 +521,8 @@ export class TransactionModal extends Modal {
       new Notice(t(this.editingTx ? 'notice.transactionUpdated' : 'notice.transactionAdded'))
     } catch (e) {
       this.showError(String(e))
+    } finally {
+      this.isConfirming = false
     }
   }
 
