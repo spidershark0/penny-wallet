@@ -1,4 +1,4 @@
-import { App, Modal, Notice } from 'obsidian'
+import { App, Modal, Notice, setIcon } from 'obsidian'
 import { Transaction, TransactionType, TransactionModalParams, PennyWalletConfig } from '../types'
 import { WalletFile, dateToYearMonth } from '../io/WalletFile'
 import { t } from '../i18n'
@@ -93,9 +93,14 @@ export class TransactionModal extends Modal {
     contentEl.empty()
     contentEl.addClass('pw-modal')
 
-    contentEl.createEl('h2', {
+    const titleRow = contentEl.createDiv('pw-modal-title-row')
+    const titleEl = titleRow.createEl('h2', {
       text: this.editingTx ? t('modal.editTitle') : t('modal.addTitle'),
     })
+    if (this.editingTx) {
+      const iconEl = titleEl.createSpan('pw-modal-title-icon')
+      setIcon(iconEl, 'pencil')
+    }
 
     this.typeTabsEl = contentEl.createDiv('pw-type-tabs')
     this.renderTypeTabs()
@@ -210,7 +215,7 @@ export class TransactionModal extends Modal {
         sel.addEventListener('change', () => { this.category = sel.value })
         onPickerTouch(sel)
         return sel
-      })
+      }, true)
 
       this.addField(this.fieldsEl, t('modal.wallet'), () => {
         const sel = createEl('select')
@@ -225,7 +230,7 @@ export class TransactionModal extends Modal {
         sel.addEventListener('change', () => { this.wallet = sel.value })
         onPickerTouch(sel)
         return sel
-      })
+      }, true)
 
     } else {
       const categories = this.getCategoryOptions(config)
@@ -242,7 +247,7 @@ export class TransactionModal extends Modal {
         })
         onPickerTouch(sel)
         return sel
-      })
+      }, true)
 
       // Normalize wallet state when category constrains wallet types
       this.normalizeWalletForCategory(config)
@@ -260,7 +265,7 @@ export class TransactionModal extends Modal {
         sel.addEventListener('change', () => { this.fromWallet = sel.value })
         onPickerTouch(sel)
         return sel
-      })
+      }, true)
 
       this.addField(this.fieldsEl, t('modal.toWallet'), () => {
         const sel = createEl('select')
@@ -272,7 +277,7 @@ export class TransactionModal extends Modal {
         sel.addEventListener('change', () => { this.toWallet = sel.value })
         onPickerTouch(sel)
         return sel
-      })
+      }, true)
     }
 
     this.addField(this.fieldsEl, t('modal.tags'), () => {
@@ -315,9 +320,10 @@ export class TransactionModal extends Modal {
     if (autoFocus) setTimeout(() => amountInput.focus(), 50) // wait for modal open animation to complete
   }
 
-  private addField(container: HTMLElement, label: string, buildInput: () => HTMLElement) {
+  private addField(container: HTMLElement, label: string, buildInput: () => HTMLElement, required = false) {
     const row = container.createDiv('pw-field-row')
-    row.createEl('label', { text: label, cls: 'pw-field-label' })
+    const labelEl = row.createEl('label', { text: label, cls: 'pw-field-label' })
+    if (required) labelEl.createEl('span', { text: '*', cls: 'pw-field-required', attr: { 'aria-hidden': 'true' } })
     const input = buildInput()
     input.addClass('pw-field-input')
     if (input instanceof HTMLSelectElement) {
@@ -457,6 +463,11 @@ export class TransactionModal extends Modal {
       this.toWallet = ''
     } else {
       this.wallet = ''
+    }
+    const config = this.walletFile.getConfig()
+    const validCategories = getCategoryOptionsFromState(config, newType)
+    if (this.category && !validCategories.some(c => c.key === this.category)) {
+      this.category = ''
     }
   }
 

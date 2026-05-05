@@ -96,6 +96,7 @@ const translations = {
     // Transaction modal
     'modal.addTitle': '新增交易',
     'modal.editTitle': '編輯交易',
+    'modal.editingDate': '編輯 {date} 的交易',
     'modal.date': '日期',
     'modal.wallet': '帳戶',
     'modal.fromWallet': '轉出帳戶',
@@ -288,6 +289,7 @@ const translations = {
 
     'modal.addTitle': 'Add Transaction',
     'modal.editTitle': 'Edit Transaction',
+    'modal.editingDate': 'Editing transaction from {date}',
     'modal.date': 'Date',
     'modal.wallet': 'Account',
     'modal.fromWallet': 'From Account',

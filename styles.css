@@ -167,10 +167,23 @@ canvas {
 
 .pw-mobile-top-title {
   flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-normal);
+}
+
+.pw-modal-title-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.pw-modal-title-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Type tabs */
@@ -291,7 +304,9 @@ canvas {
 .pw-mobile-row-label {
   font-size: 15px;
   color: var(--text-muted);
-  flex: 0 0 64px;
+  flex: 0 0 auto;
+  min-width: 64px;
+  white-space: nowrap;
 }
 
 .pw-mobile-row-value {
@@ -302,6 +317,21 @@ canvas {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pw-mobile-date-row {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pw-mobile-date-row::after {
+  content: '›';
+  flex: 0 0 24px;
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  text-align: right;
 }
 
 .pw-mobile-bottom-sheet-row {
@@ -620,6 +650,9 @@ body.pw-bottom-sheet-lock {
 .pw-modal h2 {
   margin-bottom: 16px;
   color: var(--text-normal);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .pw-type-tabs {
@@ -683,6 +716,11 @@ body.pw-bottom-sheet-lock {
   flex-shrink: 0;
 }
 
+.pw-field-required {
+  color: var(--pw-expense);
+  margin-left: 2px;
+}
+
 .pw-field-input {
   flex: 1;
   padding: 6px 8px;
@@ -737,6 +775,7 @@ body.pw-bottom-sheet-lock {
   margin-right: 0;
   cursor: pointer;
 }
+
 
 .pw-refund-block {
   margin-left: 24px;

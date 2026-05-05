@@ -1,3 +1,4 @@
+import { setIcon } from 'obsidian'
 import { TransactionType, PennyWalletConfig } from '../types'
 import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
@@ -42,6 +43,14 @@ export class MobileTransactionModal extends TransactionModal {
     let confirmTouched = false
     confirmBtn.addEventListener('touchend', (e) => { e.preventDefault(); confirmTouched = true; void this.handleConfirm() })
     confirmBtn.addEventListener('click', () => { if (confirmTouched) { confirmTouched = false; return } void this.handleConfirm() })
+
+    if (this.editingTx) {
+      const titleEl = topBar.querySelector<HTMLElement>('.pw-mobile-top-title')
+      if (titleEl) {
+        const iconEl = titleEl.createSpan('pw-modal-title-icon')
+        setIcon(iconEl, 'pencil')
+      }
+    }
 
     // Type tabs
     this.mobileTabsEl = contentEl.createDiv('pw-mobile-tabs')
@@ -139,7 +148,7 @@ export class MobileTransactionModal extends TransactionModal {
         return dateInput
       },
       () => dateInput.focus(),
-    )
+    ).addClass('pw-mobile-date-row')
 
     if (this.type === 'expense' || this.type === 'income') {
       // Category
@@ -152,6 +161,7 @@ export class MobileTransactionModal extends TransactionModal {
         this.withEmptyOption(categories),
         () => this.category,
         (key) => { this.category = key },
+        true,
       )
 
       // Wallet
@@ -165,6 +175,7 @@ export class MobileTransactionModal extends TransactionModal {
         this.withEmptyOption(walletOptions.map(w => ({ key: w.name, label: w.name }))),
         () => this.wallet,
         (key) => { this.wallet = key },
+        true,
       )
 
     } else {
@@ -181,6 +192,7 @@ export class MobileTransactionModal extends TransactionModal {
           this.category = key
           this.renderMobileRows(config)
         },
+        true,
       )
 
       // Normalize wallet state when category constrains wallet types
@@ -197,6 +209,7 @@ export class MobileTransactionModal extends TransactionModal {
         this.withEmptyOption(fromWallets.map(w => ({ key: w.name, label: w.name }))),
         () => this.fromWallet,
         (key) => { this.fromWallet = key },
+        true,
       )
 
       // To wallet
@@ -207,6 +220,7 @@ export class MobileTransactionModal extends TransactionModal {
         this.withEmptyOption(toWallets.map(w => ({ key: w.name, label: w.name }))),
         () => this.toWallet,
         (key) => { this.toWallet = key },
+        true,
       )
     }
 
@@ -341,13 +355,14 @@ export class MobileTransactionModal extends TransactionModal {
     initialValue: string,
     buildPicker: (valueEl: HTMLElement) => HTMLElement,
     onRowClick?: () => void,
-  ) {
+  ): HTMLElement {
     const row = container.createDiv('pw-mobile-row')
     row.createEl('span', { cls: 'pw-mobile-row-label', text: label })
     const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
     const picker = buildPicker(valueEl)
     row.appendChild(picker)
     if (onRowClick) row.addEventListener('click', onRowClick)
+    return row
   }
 
   private addMobileBottomSheetRow(
@@ -357,11 +372,13 @@ export class MobileTransactionModal extends TransactionModal {
     options: BottomSheetOption[],
     getSelected: () => string,
     onSelect: (key: string) => void,
+    required = false,
   ) {
     const row = container.createDiv('pw-mobile-row pw-mobile-bottom-sheet-row')
     row.setAttribute('role', 'button')
     row.tabIndex = 0
-    row.createEl('span', { cls: 'pw-mobile-row-label', text: label })
+    const labelEl = row.createEl('span', { cls: 'pw-mobile-row-label', text: label })
+    if (required) labelEl.createEl('span', { text: '*', cls: 'pw-field-required', attr: { 'aria-hidden': 'true' } })
     const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
 
     const openPicker = () => {
