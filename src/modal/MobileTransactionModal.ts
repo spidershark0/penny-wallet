@@ -2,9 +2,10 @@ import { setIcon } from 'obsidian'
 import { TransactionType, PennyWalletConfig } from '../types'
 import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
-import { validateTag, formatMobileHeroAmount } from '../utils'
+import { formatMobileHeroAmount } from '../utils'
 import { getTransferWalletCandidates } from './transactionState'
 import { openBottomSheetPicker, type BottomSheetOption } from './BottomSheetPicker'
+import { openTagPicker } from './TagPicker'
 
 export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
@@ -79,7 +80,7 @@ export class MobileTransactionModal extends TransactionModal {
   private bindMobileTextFocusState() {
     const isTextKeyboardTarget = (target: EventTarget | null): target is HTMLElement => {
       return target instanceof HTMLElement &&
-        target.matches('.pw-mobile-note-input, .pw-tag-input, .pw-bottom-sheet-search')
+        target.matches('.pw-mobile-note-input, .pw-bottom-sheet-search, .pw-tag-picker-add-input')
     }
 
     this.contentEl.addEventListener('focusin', (e) => {
@@ -224,116 +225,44 @@ export class MobileTransactionModal extends TransactionModal {
       )
     }
 
-    // Tags
+    // Tags — chips-or-placeholder row, taps anywhere to open multi-select picker
     const tagRow = this.mobileRowsEl.createDiv('pw-mobile-row')
     tagRow.createEl('span', { cls: 'pw-mobile-row-label', text: t('modal.tags') })
     const tagWrapper = tagRow.createDiv('pw-tag-input-wrapper')
-    const tagChipsEl = tagWrapper.createDiv('pw-tag-chips')
-    const tagInput = tagWrapper.createEl('input', {
-      type: 'text',
-      cls: 'pw-tag-input',
-      placeholder: t('modal.tagsPlaceholder'),
-    })
-    tagInput.setAttribute('enterkeyhint', 'done')
-    const tagDropdown = tagWrapper.createDiv('pw-tag-dropdown')
-    tagDropdown.hide()
-
-    const availableTags = this.walletFile.getConfig().tags
-
-    const TAG_DROPDOWN_MAX_H_ABOVE = 152 // must match CSS .pw-tag-dropdown--above
-    const TAG_DROPDOWN_MAX_H_BELOW = 320 // must match CSS .pw-tag-dropdown default
-    let tagInputFocused = false
-
-    const repositionMobDropdown = () => {
-      if (tagDropdown.style.display === 'none') return
-      const rect = tagInput.getBoundingClientRect()
-      if (tagInputFocused) {
-        // keyboard open: show above
-        tagDropdown.addClass('pw-tag-dropdown--above')
-        tagDropdown.style.top = `${rect.top - TAG_DROPDOWN_MAX_H_ABOVE - 2}px`
-      } else {
-        // no keyboard: show below
-        tagDropdown.removeClass('pw-tag-dropdown--above')
-        tagDropdown.style.top = `${rect.bottom + 2}px`
-        void TAG_DROPDOWN_MAX_H_BELOW // referenced to avoid unused warning
-      }
-      tagDropdown.style.left = `${rect.left}px`
-      tagDropdown.style.width = `${rect.width}px`
-    }
-
-    const updateMobDropdown = () => {
-      const val = tagInput.value.replace(/^#/, '').toLowerCase()
-      const suggestions = availableTags.filter(tag =>
-        !this.tags.includes(tag) && (val === '' || tag.toLowerCase().includes(val))
-      )
-      tagDropdown.empty()
-      if (suggestions.length === 0) { tagDropdown.hide(); return }
-      for (const tag of suggestions) {
-        const item = tagDropdown.createDiv({ cls: 'pw-tag-dropdown-item', text: tag })
-        item.addEventListener('mousedown', (e) => { e.preventDefault(); addMobTag(tag); updateMobDropdown() })
-      }
-      tagDropdown.show()
-      repositionMobDropdown()
-    }
-
-    window.visualViewport?.addEventListener('resize', repositionMobDropdown)
-    this.viewportCleanups.push(() => window.visualViewport?.removeEventListener('resize', repositionMobDropdown))
+    const tagChipsEl = tagWrapper.createDiv('pw-mobile-tag-chips')
 
     const renderMobChips = () => {
       tagChipsEl.empty()
+      if (this.tags.length === 0) {
+        tagChipsEl.createSpan({
+          cls: 'pw-mobile-tag-row-placeholder',
+          text: t('tagPicker.rowPlaceholder'),
+        })
+        return
+      }
       for (const tag of this.tags) {
-        const chip = tagChipsEl.createSpan('pw-tag-chip')
-        chip.createSpan({ text: `#${tag}` })
-        const x = chip.createSpan({ text: '×', cls: 'pw-tag-chip-remove' })
-        x.addEventListener('click', () => {
-          this.tags = this.tags.filter(t => t !== tag)
-          renderMobChips()
-          if (this.tags.length < 3) tagInput.removeAttribute('disabled')
+        // Display-only chips that match the picker's selected style (oval, accent).
+        // Tap anywhere on the row (chip or whitespace) opens the picker (B1).
+        tagChipsEl.createSpan({
+          cls: 'pw-tag-picker-chip is-selected',
+          text: `#${tag}`,
         })
       }
     }
 
-    const addMobTag = (value?: string) => {
-      const raw = (value ?? tagInput.value).replace(/^#/, '').trim()
-      if (!raw) return
-      if (!validateTag(raw)) { tagInput.value = ''; tagDropdown.hide(); return }
-      if (this.tags.includes(raw)) { tagInput.value = ''; tagDropdown.hide(); return }
-      if (this.tags.length >= 3) return
-      this.tags = [...this.tags, raw]
-      tagInput.value = ''
-      tagDropdown.hide()
-      renderMobChips()
-      if (this.tags.length >= 3) tagInput.setAttribute('disabled', 'true')
-    }
+    tagChipsEl.addEventListener('click', () => {
+      openTagPicker({
+        containerEl: this.contentEl,
+        walletFile: this.walletFile,
+        initialSelected: this.tags,
+        onCommit: (selected) => {
+          this.tags = selected
+          renderMobChips()
+        },
+      })
+    })
 
-    // Keyboard dismiss toolbar (iOS: fixed bar pushed above keyboard)
-    const kbToolbar = this.contentEl.createDiv('pw-kb-toolbar')
-    kbToolbar.hide()
-    const doneBtn = kbToolbar.createEl('button', { cls: 'pw-kb-toolbar-done', text: t('modal.done') })
-    doneBtn.addEventListener('mousedown', (e) => e.preventDefault()) // prevent blur before click
-    doneBtn.addEventListener('click', () => tagInput.blur())
-    this.viewportCleanups.push(() => kbToolbar.remove())
-
-    tagInput.addEventListener('input', updateMobDropdown)
-    tagInput.addEventListener('focus', () => {
-      tagInputFocused = true
-      kbToolbar.show()
-      updateMobDropdown()
-      setTimeout(() => {
-        repositionMobDropdown()
-      }, 300)
-    })
-    tagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addMobTag() }
-      if (e.key === 'Escape') tagDropdown.hide()
-    })
-    tagInput.addEventListener('blur', () => {
-      tagInputFocused = false
-      setTimeout(() => { tagDropdown.hide(); kbToolbar.hide() }, 150)
-      addMobTag()
-    })
     renderMobChips()
-    if (this.tags.length >= 3) tagInput.setAttribute('disabled', 'true')
 
     // Note
     const noteRow = this.mobileRowsEl.createDiv('pw-mobile-row')

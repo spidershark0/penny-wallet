@@ -294,6 +294,15 @@ export class WalletFile {
     this.config = { ...this.config, tags: [...existing].sort() }
   }
 
+  async addTag(name: string): Promise<{ ok: true } | { ok: false, reason: 'empty' | 'duplicate' }> {
+    const trimmed = name.trim().replace(/^#/, '').trim()
+    if (!trimmed) return { ok: false, reason: 'empty' }
+    if (this.config.tags.includes(trimmed)) return { ok: false, reason: 'duplicate' }
+    this.config = { ...this.config, tags: [...this.config.tags, trimmed].sort() }
+    await this.saveConfig()
+    return { ok: true }
+  }
+
   async saveConfig(): Promise<void> {
     const path = ROOT_CONFIG_PATH
     const content = JSON.stringify(this.config, null, 2)

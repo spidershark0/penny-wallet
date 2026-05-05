@@ -383,9 +383,8 @@ canvas {
   color: var(--text-faint);
 }
 
-/* Hide numpad when note or tag field is focused (iOS keyboard replaces it) */
+/* Hide numpad when note field is focused (iOS keyboard replaces it) */
 .pw-mobile-rows:has(.pw-mobile-note-input:focus) ~ .pw-mobile-numpad,
-.pw-mobile-rows:has(.pw-tag-input:focus) ~ .pw-mobile-numpad,
 .pw-mobile-content.pw-mobile-text-focus .pw-mobile-numpad,
 .pw-mobile-content.pw-bottom-sheet-active .pw-mobile-numpad {
   display: none;
@@ -395,7 +394,6 @@ canvas {
    container so scrollIntoView has room to lift the focused row above the keyboard. */
 @media (pointer: coarse) {
   .pw-mobile-content:has(.pw-mobile-note-input:focus) .pw-mobile-rows,
-  .pw-mobile-content:has(.pw-tag-input:focus) .pw-mobile-rows,
   .pw-mobile-content.pw-mobile-text-focus .pw-mobile-rows,
   .pw-mobile-content.pw-bottom-sheet-active .pw-mobile-rows {
     padding-bottom: 60vh;
@@ -544,28 +542,138 @@ body.pw-bottom-sheet-lock {
   text-align: center;
 }
 
-/* Keyboard dismiss toolbar — sits above iOS software keyboard via position:fixed */
-.pw-kb-toolbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10000;
+/* ===== Tag Picker (Phase 3a) ===== */
+
+.pw-tag-picker {
   display: flex;
-  justify-content: flex-end;
-  padding: 6px 12px;
-  background: var(--background-secondary);
-  border-top: 1px solid var(--background-modifier-border);
+  flex-direction: column;
+  position: relative; /* anchor for .is-dimmed ::after overlay */
 }
 
-.pw-kb-toolbar-done {
-  font-size: 15px;
+.pw-bottom-sheet-bar .pw-bottom-sheet-btn--done {
+  justify-self: end;
   font-weight: 600;
-  color: var(--interactive-accent);
-  background: transparent;
-  border: none;
-  padding: 4px 8px;
+}
+
+.pw-tag-picker-chips {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 14px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+}
+
+.pw-tag-picker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: color-mix(in srgb, var(--interactive-accent) 30%, var(--background-primary) 70%) !important;
+  color: var(--text-normal) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 6px 12px !important;
+  font-size: 14px;
   cursor: pointer;
+  box-shadow: none !important;
+  transition: background-color 200ms ease-out, color 200ms ease-out, opacity 200ms ease-out;
+}
+
+.pw-tag-picker-chip.is-selected {
+  background: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.pw-tag-picker-chip.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pw-tag-picker-empty {
+  width: 100%;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 24px 12px;
+}
+
+.pw-tag-picker-add-row {
+  width: 100%;
+  min-height: 48px;
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid var(--background-modifier-border);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--interactive-accent);
+  font-size: 16px;
+  text-align: left;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.pw-tag-picker-add-row:active {
+  background: var(--background-modifier-hover) !important;
+}
+
+.pw-tag-picker-add-row.is-disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.pw-tag-picker-add-row.is-disabled:active {
+  background: transparent !important;
+}
+
+/* Inline add button — sits between search and chip area, always visible
+   above the keyboard when it rises. */
+.pw-tag-picker-inline-add {
+  width: calc(100% - 28px);
+  margin: 4px 14px 0;
+  min-height: 40px;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--interactive-accent);
+  font-size: 15px;
+  text-align: left;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.pw-tag-picker-inline-add:active {
+  background: var(--background-modifier-hover) !important;
+}
+
+.pw-tag-picker-inline-add.is-disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.pw-tag-picker-inline-add.is-disabled:active {
+  background: transparent !important;
+}
+
+/* Modal-side mobile tag row — chips OR placeholder, whole row taps to open picker.
+   Uses .pw-tag-picker-chip.is-selected styling for visual consistency with picker. */
+.pw-mobile-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.pw-mobile-tag-row-placeholder {
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 /* Custom numpad — gap:1px uses the grid background as hairline dividers between cells.
