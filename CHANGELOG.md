@@ -2,7 +2,7 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
-## [0.0.10] - 2026-05-03
+## [0.0.10] - 2026-05-06
 
 ### Added
 - **Refund as negative expense** — new「這是退款」toggle in the expense form saves the transaction with a negative amount; refunds render as a lighter green `+amount` in the list, distinguishable from regular income at a glance; migration script `scripts/migrate-refund.mjs` converts legacy `transfer credit_card_refund` records to the new format
@@ -10,6 +10,8 @@ All notable changes to PennyWallet will be documented in this file.
 
 ### Changed
 - **Transaction modal redesign** — single accent colour (only Confirm is blue; title / type tabs / Cancel all neutral grey); refund toggle + inline hint grouped in a bordered sub-option block under the type tabs, with a desktop hover tooltip / mobile inline hint explaining that refunds are stored as negative expenses (`modal.isRefund.hint`); editing a refund (or toggling it on with an amount entered) shows a `+` prefix beside the amount — input prefix on desktop, hero prefix on mobile; mobile amount hero enlarged to 48 px / weight 500 with thousand-separated numbers (muted when empty, full-contrast when typed) and no `NT$` symbol; mobile top buttons shrunk to 32 × 32 visible / 44 pt touch; tag chip × hit area enlarged via padding without changing visible size; plain and wrapper-based field inputs (tag / amount wrappers) unified to one height with a single focus ring (nested input shadow suppressed)
+- **Edit-mode cues, required markers, date affordance, transfer category reset** — edit modal title gains a pencil icon prefix and a subtitle「編輯 MM/DD 的交易」/「Editing transaction from MM/DD」using the source transaction's date; required fields (wallet, category, fromWallet, toWallet) now show a `*` after the label; the date input is cursor-pointer with an accent hover border on desktop and a `▾` caret beside the value on mobile; switching transaction type now clears `category` only when the current value isn't valid for the new type (amount, date, note, tags are still preserved across type switches)
+- **Mobile tag picker** — replaces the mobile inline tag input with a bottom-sheet multi-select picker; chips render in alphabetical order with a unified oval style, tapping toggles selection (3-tag cap with disabled affordance on over-cap unselected chips); the picker's search input doubles as a new-tag entry — an inline「+ 新增「name」」 button appears between search and the chip list when typing so it stays reachable above the keyboard, and a bottom「+ 新增標籤」row prompts when search is empty; new tags persist via the new `WalletFile.addTag` helper (trim, strip leading `#`, dedupe, alphabetical insert, save). The mobile modal's tag row is now display-only chips (matching the picker's selected style) plus a muted「選擇標籤」placeholder; tapping anywhere on the row opens the picker. Desktop tag row is unchanged
 - **Charts** — migrated to Chart.js for more stable rendering and a smaller bundle; pie chart merges small categories into "Others" with tap-to-drill-down; tooltip now shows amount and percentage
 - **Transaction list** — action buttons reveal on hover (desktop) / stay visible (mobile) for a cleaner default layout
 - **Shared styling** — unified CSS colour tokens; refactored shared `Card` and `Metric` components
