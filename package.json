@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "node scripts/test-ui.mjs"
+    "test:ui": "node scripts/test-ui.mjs",
+    "test:ui:mobile": "node scripts/test-ui-mobile.mjs"
   },
   "keywords": [],
   "author": "twrusstw",

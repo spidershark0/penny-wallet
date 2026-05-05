@@ -16,7 +16,6 @@ export class PennyWalletSettingTab extends PluginSettingTab {
   display(restoreScrollTop?: number): void {
     const { containerEl } = this
     containerEl.empty()
-    new Setting(containerEl).setName(t('settings.title')).setHeading()
 
     void (async () => {
       let walletBalances: WalletBalance[] = []
@@ -47,8 +46,6 @@ export class PennyWalletSettingTab extends PluginSettingTab {
   private renderGeneral() {
     const config = this.walletFile.getConfig()
     const { containerEl } = this
-
-    new Setting(containerEl).setName(t('settings.general')).setHeading()
 
     const group = containerEl.createDiv('pw-settings-group')
 

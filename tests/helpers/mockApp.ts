@@ -4,8 +4,12 @@ import { TFile } from 'obsidian'
  * Create an in-memory Obsidian App mock backed by a simple Map.
  * Pass initial files as { 'path/to/file.md': 'content' }.
  */
-export function createMockApp(initialFiles: Record<string, string> = {}) {
+export function createMockApp(
+  initialFiles: Record<string, string> = {},
+  options: { hiddenPaths?: string[] } = {},
+) {
   const store = new Map<string, string>(Object.entries(initialFiles))
+  const hiddenPaths = new Set(options.hiddenPaths ?? [])
 
   const makeTFile = (path: string) => Object.assign(new TFile(), {
     path,
@@ -14,10 +18,12 @@ export function createMockApp(initialFiles: Record<string, string> = {}) {
 
   const vault = {
     getAbstractFileByPath: (path: string) => {
+      if (hiddenPaths.has(path)) return null
       if (store.has(path)) return makeTFile(path)
       return null
     },
     getFileByPath: (path: string) => {
+      if (hiddenPaths.has(path)) return null
       if (store.has(path)) return makeTFile(path)
       return null
     },
@@ -32,6 +38,11 @@ export function createMockApp(initialFiles: Record<string, string> = {}) {
     read: async (file: InstanceType<typeof TFile>) => store.get(file.path) ?? '',
     modify: async (file: InstanceType<typeof TFile>, content: string) => {
       store.set(file.path, content)
+    },
+    process: async (file: InstanceType<typeof TFile>, fn: (data: string) => string) => {
+      const content = fn(store.get(file.path) ?? '')
+      store.set(file.path, content)
+      return content
     },
     create: async (path: string, content: string) => {
       if (store.has(path)) throw new Error(`File already exists: ${path}`)

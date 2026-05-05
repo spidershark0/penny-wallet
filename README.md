@@ -24,7 +24,7 @@ A personal finance tracker plugin for [Obsidian](https://obsidian.md). Log expen
 
 ### Community Plugin Store
 
-Search **PennyWallet** in **Settings → Community Plugins → Browse**.
+PennyWallet is not yet listed in the Community Plugin Store.
 
 ## Getting Started
 

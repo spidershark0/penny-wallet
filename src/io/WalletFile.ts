@@ -216,7 +216,7 @@ export class WalletFile {
     const file = this.app.vault.getFileByPath(path)
 
     if (!file) {
-      // Vault index may be stale at startup — check the filesystem directly
+      // Root dotfiles may be omitted from Obsidian's vault index; adapter access keeps existing configs readable.
       const existsOnDisk = await this.app.vault.adapter.exists(path)
       if (existsOnDisk) {
         try {
@@ -299,14 +299,18 @@ export class WalletFile {
     const content = JSON.stringify(this.config, null, 2)
     const file = this.app.vault.getFileByPath(path)
     if (file) {
-      await this.app.vault.modify(file, content)
+      await this.app.vault.process(file, () => content)
     } else {
       try {
         await this.app.vault.create(path, content)
       } catch (e: unknown) {
         if (!(e instanceof Error) || !e.message?.includes('already exists')) throw e
-        // Vault index is stale; write directly via adapter
-        await this.app.vault.adapter.write(path, content)
+        const retryFile = this.app.vault.getFileByPath(path)
+        if (retryFile) {
+          await this.app.vault.process(retryFile, () => content)
+        } else {
+          await this.app.vault.adapter.write(path, content)
+        }
       }
     }
   }
@@ -353,7 +357,7 @@ export class WalletFile {
     const path = this.monthFilePath(yearMonth)
     const file = this.app.vault.getFileByPath(path)
     if (file) {
-      await this.app.vault.modify(file, content)
+      await this.app.vault.process(file, () => content)
     } else {
       try {
         await this.app.vault.create(path, content)
@@ -365,7 +369,7 @@ export class WalletFile {
         // File was created by another process; try to modify it
         const retryFile = this.app.vault.getFileByPath(path)
         if (retryFile) {
-          await this.app.vault.modify(retryFile, content)
+          await this.app.vault.process(retryFile, () => content)
         }
       }
     }

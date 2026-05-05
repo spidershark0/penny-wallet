@@ -29,6 +29,21 @@ describe('loadConfig', () => {
     expect(config.wallets[0].initialBalance).toBe(9999)
   })
 
+  it('loads dotfile config through adapter when vault index omits it', async () => {
+    const saved = { ...DEFAULT_CONFIG, defaultWallet: 'HiddenBank', wallets: [
+      { name: 'HiddenBank', type: 'bank' as const, initialBalance: 1234, status: 'active' as const, includeInNetAsset: true },
+    ]}
+    const { app } = createMockApp(
+      { '.penny-wallet.json': JSON.stringify(saved) },
+      { hiddenPaths: ['.penny-wallet.json'] },
+    )
+    const wf = new WalletFile(app)
+    const config = await wf.loadConfig()
+
+    expect(config.defaultWallet).toBe('HiddenBank')
+    expect(config.wallets[0].initialBalance).toBe(1234)
+  })
+
   it('falls back to DEFAULT_CONFIG for malformed JSON', async () => {
     const { app } = createMockApp({ '.penny-wallet.json': '{ invalid json }' })
     const wf = new WalletFile(app)

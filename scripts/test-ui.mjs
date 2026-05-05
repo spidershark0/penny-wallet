@@ -114,20 +114,6 @@ function openAddModal() {
   wait(400)
 }
 
-/** Count DOM elements matching selector. Returns 0 when none found, -1 on error. */
-function count(selector) {
-  const result = obs(`dev:dom selector="${selector}" total`)
-  if (result === null) return -1
-  if (result.startsWith('No elements')) return 0
-  const n = parseInt(result, 10)
-  return isNaN(n) ? -1 : n
-}
-
-/** Get text content of first element matching selector. */
-function text(selector) {
-  return obs(`dev:dom selector="${selector}" text`) ?? ''
-}
-
 /**
  * Execute JS in Obsidian renderer.
  * The CLI prefixes results with "=> ", e.g. `=> true`.
@@ -141,13 +127,43 @@ function evalJs(code) {
   return raw.startsWith('=> ') ? raw.slice(3) : raw
 }
 
+/** Count DOM elements matching selector. Returns 0 when none found, -1 on error. */
+function count(selector) {
+  const result = evalJs(`document.querySelectorAll(${JSON.stringify(selector)}).length`)
+  if (result === null) return -1
+  const n = parseInt(result, 10)
+  return isNaN(n) ? -1 : n
+}
+
+/** Get text content of first element matching selector. */
+function text(selector) {
+  return parseEvalString(evalJs(`document.querySelector(${JSON.stringify(selector)})?.textContent ?? ''`))
+}
+
 /** Click an element via JS. */
 function click(selector) {
   evalJs(`document.querySelector('${selector}')?.click()`)
   wait(300)
 }
 
+function ensureDesktopMode() {
+  obs('dev:mobile off')
+  wait(1000)
+  evalJs("const {remote}=require('electron'); const win=remote.getCurrentWindow(); win.setSize(1400,900);")
+  wait(600)
+  return evalJs("JSON.stringify({width:window.innerWidth,height:window.innerHeight,isPhone:document.body.classList.contains('is-phone')})")
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
+
+section('Desktop environment')
+
+const desktopEnv = ensureDesktopMode()
+let desktopState = null
+try { desktopState = JSON.parse(desktopEnv) } catch { /* keep null for assertion detail */ }
+assert('Desktop mode is active', desktopState?.isPhone === false, desktopEnv)
+assert('Desktop viewport is 1400x900', desktopState?.width === 1400 && desktopState?.height === 900,
+  desktopState ? `${desktopState.width}x${desktopState.height}` : desktopEnv)
 
 section('Plugin health')
 
@@ -165,7 +181,7 @@ assert('Month label is present',   count('.pw-month-label') > 0)
 assert('Prev navigation button',   count('.pw-nav-btn') >= 2)
 assert('Metrics row rendered',     count('.pw-metrics') > 0)
 assert('Income metric exists',     count('.pw-metric') >= 3)
-assert('Category charts row',      count('.pw-charts-row') > 0)
+assert('Category charts column',   count('.pw-grid-right') > 0)
 
 // ─────────────────────────────────────────────────────────────────────────────
 section('Finance Overview — month navigation')
@@ -192,7 +208,7 @@ assert('Next button disabled on current month', nextDisabled === 'true')
 section('Finance Overview — pie charts')
 
 // With demo data every month should have expenses → pie chart present
-assert('Expense pie chart renders',    count('.pw-charts-row .pw-card') >= 2)
+assert('Expense pie chart renders',    count('.pw-grid-right canvas') > 0)
 assert('Legend items present',         count('.pw-legend-item') > 0)
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -344,7 +360,7 @@ section('Credit card balance direction')
 // After adding an expense to a credit card wallet, the displayed balance
 // in Dashboard should show a positive outstanding debt (displayed positive).
 // We check the wallet list card renders correctly.
-openDashboard()
+openAsset()
 wait(400)
 assert('Wallet list shows credit card rows', count('.pw-badge-creditCard') > 0)
 
@@ -439,7 +455,7 @@ assert('Wallet status is archived in config',
 wait(400)
 evalJs("Array.from(document.querySelectorAll('.vertical-tab-nav-item')).find(el => el.textContent?.includes('PennyWallet'))?.click()")
 wait(500)
-evalJs(`[...document.querySelectorAll('.pw-archived-wallet-item')].find(el => el.querySelector('.pw-wallet-row-name')?.textContent?.trim() === ${JSON.stringify(archiveTargetName)})?.querySelector('[data-action="unarchive"]')?.click()`)
+evalJs(`[...document.querySelectorAll('.pw-wallet-row')].find(el => el.querySelector('[data-action="unarchive"]') && el.querySelector('.pw-wallet-row-name')?.textContent?.trim() === ${JSON.stringify(archiveTargetName)})?.querySelector('[data-action="unarchive"]')?.click()`)
 wait(400)
 assert('Unarchive confirm dialog appears', count('.modal-content') > 0)
 evalJs("document.querySelector('.modal-content [data-action=\"confirm\"]')?.click()")
