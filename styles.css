@@ -304,6 +304,25 @@ canvas {
   white-space: nowrap;
 }
 
+.pw-mobile-bottom-sheet-row {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pw-mobile-bottom-sheet-row:active {
+  background: var(--background-modifier-hover);
+}
+
+.pw-mobile-bottom-sheet-row::after {
+  content: '›';
+  flex: 0 0 24px;
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  text-align: right;
+}
+
 /* Invisible native picker overlay (date + select) */
 .pw-mobile-row-picker {
   position: absolute;
@@ -336,7 +355,9 @@ canvas {
 
 /* Hide numpad when note or tag field is focused (iOS keyboard replaces it) */
 .pw-mobile-rows:has(.pw-mobile-note-input:focus) ~ .pw-mobile-numpad,
-.pw-mobile-rows:has(.pw-tag-input:focus) ~ .pw-mobile-numpad {
+.pw-mobile-rows:has(.pw-tag-input:focus) ~ .pw-mobile-numpad,
+.pw-mobile-content.pw-mobile-text-focus .pw-mobile-numpad,
+.pw-mobile-content.pw-bottom-sheet-active .pw-mobile-numpad {
   display: none;
 }
 
@@ -344,9 +365,151 @@ canvas {
    container so scrollIntoView has room to lift the focused row above the keyboard. */
 @media (pointer: coarse) {
   .pw-mobile-content:has(.pw-mobile-note-input:focus) .pw-mobile-rows,
-  .pw-mobile-content:has(.pw-tag-input:focus) .pw-mobile-rows {
+  .pw-mobile-content:has(.pw-tag-input:focus) .pw-mobile-rows,
+  .pw-mobile-content.pw-mobile-text-focus .pw-mobile-rows,
+  .pw-mobile-content.pw-bottom-sheet-active .pw-mobile-rows {
     padding-bottom: 60vh;
   }
+}
+
+body.pw-bottom-sheet-lock {
+  overflow: hidden;
+}
+
+.pw-bottom-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0);
+  transition: background-color 200ms ease-out;
+}
+
+.pw-bottom-sheet-backdrop.is-open {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.pw-bottom-sheet-backdrop.is-closing {
+  background: rgba(0, 0, 0, 0);
+}
+
+.pw-bottom-sheet {
+  width: calc(100% - 16px);
+  max-height: min(78vh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--background-primary);
+  border-radius: 12px 12px 0 0;
+  box-shadow: var(--pw-shadow-overlay-above);
+  transform: translateY(100%);
+  transition: transform 200ms ease-out;
+  margin: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pw-bottom-sheet-backdrop.is-open .pw-bottom-sheet {
+  transform: translateY(0);
+}
+
+.pw-bottom-sheet-backdrop.is-closing .pw-bottom-sheet {
+  transform: translateY(100%);
+}
+
+.pw-bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  margin: 8px auto 4px;
+  border-radius: 2px;
+  background: var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.pw-bottom-sheet-bar {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.pw-bottom-sheet-btn {
+  justify-self: start;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--interactive-accent);
+  font-size: 15px;
+  padding: 8px 0;
+}
+
+.pw-bottom-sheet-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pw-bottom-sheet-spacer {
+  width: 64px;
+}
+
+.pw-bottom-sheet-search {
+  margin: 10px 14px 8px;
+  width: calc(100% - 28px) !important;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  font-size: 16px;
+  border-radius: 8px !important;
+}
+
+.pw-bottom-sheet-options {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.pw-bottom-sheet-option {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--text-normal);
+  font-size: 16px;
+  text-align: left;
+  padding: 0 20px;
+}
+
+.pw-bottom-sheet-option:active {
+  background: var(--background-modifier-hover) !important;
+}
+
+.pw-bottom-sheet-option.is-selected {
+  color: var(--interactive-accent);
+  font-weight: 600;
+}
+
+.pw-bottom-sheet-option.is-selected::after {
+  content: '✓';
+  color: var(--interactive-accent);
+  font-size: 16px;
+}
+
+.pw-bottom-sheet-empty {
+  padding: 18px 20px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
 }
 
 /* Keyboard dismiss toolbar — sits above iOS software keyboard via position:fixed */

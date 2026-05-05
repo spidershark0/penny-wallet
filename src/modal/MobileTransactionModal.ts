@@ -3,6 +3,7 @@ import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
 import { validateTag, formatMobileHeroAmount } from '../utils'
 import { getTransferWalletCandidates } from './transactionState'
+import { openBottomSheetPicker, type BottomSheetOption } from './BottomSheetPicker'
 
 export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
@@ -62,6 +63,29 @@ export class MobileTransactionModal extends TransactionModal {
     // Numpad
     const numpadEl = contentEl.createDiv('pw-mobile-numpad')
     this.renderMobileNumpad(numpadEl)
+
+    this.bindMobileTextFocusState()
+  }
+
+  private bindMobileTextFocusState() {
+    const isTextKeyboardTarget = (target: EventTarget | null): target is HTMLElement => {
+      return target instanceof HTMLElement &&
+        target.matches('.pw-mobile-note-input, .pw-tag-input, .pw-bottom-sheet-search')
+    }
+
+    this.contentEl.addEventListener('focusin', (e) => {
+      if (isTextKeyboardTarget(e.target)) {
+        this.contentEl.addClass('pw-mobile-text-focus')
+      }
+    })
+
+    this.contentEl.addEventListener('focusout', () => {
+      window.setTimeout(() => {
+        if (!isTextKeyboardTarget(document.activeElement)) {
+          this.contentEl.removeClass('pw-mobile-text-focus')
+        }
+      }, 0)
+    })
   }
 
   private renderMobileTabs(config: PennyWalletConfig) {
@@ -121,61 +145,43 @@ export class MobileTransactionModal extends TransactionModal {
       // Category
       const categories = this.getCategoryOptions(config)
       const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.category'), catLabel, (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const { key, label } of categories) {
-          const opt = sel.createEl('option', { text: label, value: key })
-          if (key === this.category) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.category = sel.value
-          const found = categories.find(c => c.key === this.category)
-          valueEl.textContent = found?.label ?? (this.category || '—')
-        })
-        return sel
-      })
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.category'),
+        catLabel,
+        this.withEmptyOption(categories),
+        () => this.category,
+        (key) => { this.category = key },
+      )
 
       // Wallet
       const walletOptions = this.type === 'income'
         ? activeWallets.filter(w => w.type !== 'creditCard')
         : activeWallets
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.wallet'), this.wallet || '—', (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const w of walletOptions) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.wallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.wallet = sel.value
-          valueEl.textContent = this.wallet || '—'
-        })
-        return sel
-      })
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.wallet'),
+        this.wallet || '—',
+        this.withEmptyOption(walletOptions.map(w => ({ key: w.name, label: w.name }))),
+        () => this.wallet,
+        (key) => { this.wallet = key },
+      )
 
     } else {
       // Category
       const categories = this.getCategoryOptions(config)
       const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.category'), catLabel, (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const { key, label } of categories) {
-          const opt = sel.createEl('option', { text: label, value: key })
-          if (key === this.category) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.category = sel.value
-          const found = categories.find(c => c.key === this.category)
-          valueEl.textContent = found?.label ?? (this.category || '—')
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.category'),
+        catLabel,
+        this.withEmptyOption(categories),
+        () => this.category,
+        (key) => {
+          this.category = key
           this.renderMobileRows(config)
-        })
-        return sel
-      })
+        },
+      )
 
       // Normalize wallet state when category constrains wallet types
       this.normalizeWalletForCategory(config)
@@ -184,36 +190,24 @@ export class MobileTransactionModal extends TransactionModal {
         = getTransferWalletCandidates(activeWallets, this.category)
 
       // From wallet
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.fromWallet'), this.fromWallet || '—', (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const w of fromWallets) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.fromWallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.fromWallet = sel.value
-          valueEl.textContent = this.fromWallet || '—'
-        })
-        return sel
-      })
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.fromWallet'),
+        this.fromWallet || '—',
+        this.withEmptyOption(fromWallets.map(w => ({ key: w.name, label: w.name }))),
+        () => this.fromWallet,
+        (key) => { this.fromWallet = key },
+      )
 
       // To wallet
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.toWallet'), this.toWallet || '—', (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const w of toWallets) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.toWallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.toWallet = sel.value
-          valueEl.textContent = this.toWallet || '—'
-        })
-        return sel
-      })
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.toWallet'),
+        this.toWallet || '—',
+        this.withEmptyOption(toWallets.map(w => ({ key: w.name, label: w.name }))),
+        () => this.toWallet,
+        (key) => { this.toWallet = key },
+      )
     }
 
     // Tags
@@ -356,6 +350,47 @@ export class MobileTransactionModal extends TransactionModal {
     if (onRowClick) row.addEventListener('click', onRowClick)
   }
 
+  private addMobileBottomSheetRow(
+    container: HTMLElement,
+    label: string,
+    initialValue: string,
+    options: BottomSheetOption[],
+    getSelected: () => string,
+    onSelect: (key: string) => void,
+  ) {
+    const row = container.createDiv('pw-mobile-row pw-mobile-bottom-sheet-row')
+    row.setAttribute('role', 'button')
+    row.tabIndex = 0
+    row.createEl('span', { cls: 'pw-mobile-row-label', text: label })
+    const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
+
+    const openPicker = () => {
+      openBottomSheetPicker({
+        containerEl: this.contentEl,
+        title: label,
+        options,
+        selected: getSelected(),
+        searchable: true,
+        onSelect: (key) => {
+          onSelect(key)
+          const found = options.find(option => option.key === key)
+          valueEl.textContent = found?.label ?? (key || '—')
+        },
+      })
+    }
+
+    row.addEventListener('click', openPicker)
+    row.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      e.preventDefault()
+      openPicker()
+    })
+  }
+
+  private withEmptyOption(options: BottomSheetOption[]): BottomSheetOption[] {
+    return [{ key: '', label: '—' }, ...options]
+  }
+
   private renderMobileNumpad(el: HTMLElement) {
     // Layout (4 cols):
     //  7   8   9   ⌫
@@ -465,7 +500,10 @@ export class MobileTransactionModal extends TransactionModal {
   onClose() {
     this.viewportCleanups.forEach(fn => fn())
     this.viewportCleanups = []
+    document.body.removeClass('pw-bottom-sheet-lock')
     this.containerEl.removeClass('pw-transaction-modal-container')
+    this.contentEl.removeClass('pw-bottom-sheet-active')
+    this.contentEl.removeClass('pw-mobile-text-focus')
     super.onClose()
   }
 }
