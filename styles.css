@@ -396,7 +396,7 @@ body.pw-bottom-sheet-lock {
 
 .pw-bottom-sheet {
   width: calc(100% - 16px);
-  max-height: min(78vh, 640px);
+  height: min(78vh, 640px);
   display: flex;
   flex-direction: column;
   background: var(--background-primary);
@@ -469,6 +469,8 @@ body.pw-bottom-sheet-lock {
 }
 
 .pw-bottom-sheet-options {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 8px;
