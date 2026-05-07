@@ -1,5 +1,64 @@
-import { describe, it, expect } from 'vitest'
-import { filterPieData, formatK } from '../../src/view/charts'
+import { afterEach, describe, it, expect, vi } from 'vitest'
+import { filterPieData, formatK, getThemeColors } from '../../src/view/charts'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('getThemeColors', () => {
+  it('reads chart colors from CSS variables', () => {
+    const values = new Map<string, string>([
+      ['--pw-income', 'income-var'],
+      ['--pw-expense', 'expense-var'],
+      ['--pw-bank', 'bank-var'],
+      ['--pw-cash', 'cash-var'],
+      ['--pw-credit', 'credit-var'],
+      ['--pw-transfer', 'transfer-var'],
+      ['--pw-payment', 'payment-var'],
+      ['--pw-expense-tint', 'expense-tint-var'],
+      ['--pw-transfer-tint', 'transfer-tint-var'],
+    ])
+
+    vi.stubGlobal('document', {
+      documentElement: {},
+      body: { classList: { contains: (name: string) => name === 'theme-light' } },
+    })
+    vi.stubGlobal('getComputedStyle', () => ({
+      getPropertyValue: (name: string) => values.get(name) ?? '',
+    }))
+
+    const colors = getThemeColors()
+
+    expect(colors.income).toBe('income-var')
+    expect(colors.expense).toBe('expense-var')
+    expect(colors.net).toBe('payment-var')
+    expect(colors.pie).toEqual([
+      'expense-var',
+      'bank-var',
+      'payment-var',
+      'cash-var',
+      'income-var',
+      'transfer-var',
+      'credit-var',
+      '#888780',
+    ])
+  })
+
+  it('reads theme overrides from body computed style', () => {
+    const body = { classList: { contains: (name: string) => name === 'theme-light' } }
+    const documentElement = {}
+    const getComputedStyle = vi.fn(() => ({
+      getPropertyValue: (name: string) => name,
+    }))
+
+    vi.stubGlobal('document', { documentElement, body })
+    vi.stubGlobal('getComputedStyle', getComputedStyle)
+
+    getThemeColors()
+
+    expect(getComputedStyle).toHaveBeenCalledWith(body)
+  })
+})
 
 describe('formatK', () => {
   it('formats values >= 10000 as Nk', () => {

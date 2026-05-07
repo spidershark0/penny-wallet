@@ -31,7 +31,7 @@ export interface MonthData {
 // ─── Color helpers ────────────────────────────────────────────────────────────
 
 export function getThemeColors() {
-  const s = getComputedStyle(document.documentElement)
+  const s = getComputedStyle(document.body)
   const v = (name: string, fallback: string) => s.getPropertyValue(name).trim() || fallback
   const dark = document.body.classList.contains('theme-dark')
   return {

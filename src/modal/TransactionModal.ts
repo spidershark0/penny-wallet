@@ -180,13 +180,6 @@ export class TransactionModal extends Modal {
     this.fieldsEl.empty()
     this.amountPrefixEl = null
 
-    // Remove keyboard-open class on touchstart so modal repositions BEFORE the native picker opens.
-    const onPickerTouch = (el: HTMLElement) => {
-      el.addEventListener('touchstart', () => {
-        this.containerEl.removeClass('pw-modal-keyboard-open')
-      }, { passive: true })
-    }
-
     // Refund row first (expense only) — sub-option of the type tab, visually adjacent.
     if (this.type === 'expense') {
       this.addRefundRow(this.fieldsEl)
@@ -197,87 +190,55 @@ export class TransactionModal extends Modal {
       const input = createEl('input', { type: 'date' })
       input.value = this.date
       input.addEventListener('change', () => { this.date = input.value })
-      onPickerTouch(input)
+      this.attachPickerTouch(input)
       return input
     })
 
     const activeWallets = this.getActiveWallets(config)
+    const categories = this.getCategoryOptions(config)
+    const isTransferOrPayment = this.type !== 'expense' && this.type !== 'income'
+    const onCategoryChange = isTransferOrPayment
+      ? (val: string) => { this.category = val; this.renderFields(config, false) }
+      : (val: string) => { this.category = val }
+
+    this.addField(this.fieldsEl, t('modal.category'), () =>
+      this.buildSelect(
+        categories.map(c => ({ value: c.key, label: c.label })),
+        this.category,
+        onCategoryChange
+      ), true)
 
     if (this.type === 'expense' || this.type === 'income') {
-      const categories = this.getCategoryOptions(config)
-      this.addField(this.fieldsEl, t('modal.category'), () => {
-        const sel = createEl('select')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const { key, label } of categories) {
-          const opt = sel.createEl('option', { text: label, value: key })
-          if (key === this.category) opt.selected = true
-        }
-        sel.addEventListener('change', () => { this.category = sel.value })
-        onPickerTouch(sel)
-        return sel
-      }, true)
-
       this.addField(this.fieldsEl, t('modal.wallet'), () => {
-        const sel = createEl('select')
-        sel.createEl('option', { text: '—', value: '' })
         const walletOptions = this.type === 'income'
           ? activeWallets.filter(w => w.type !== 'creditCard')
           : activeWallets
-        for (const w of walletOptions) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.wallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => { this.wallet = sel.value })
-        onPickerTouch(sel)
-        return sel
+        return this.buildSelect(
+          walletOptions.map(w => ({ value: w.name, label: w.name })),
+          this.wallet,
+          val => { this.wallet = val }
+        )
       }, true)
 
     } else {
-      const categories = this.getCategoryOptions(config)
-      this.addField(this.fieldsEl, t('modal.category'), () => {
-        const sel = createEl('select')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const { key, label } of categories) {
-          const opt = sel.createEl('option', { text: label, value: key })
-          if (key === this.category) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.category = sel.value
-          this.renderFields(config, false)
-        })
-        onPickerTouch(sel)
-        return sel
-      }, true)
-
-      // Normalize wallet state when category constrains wallet types
       this.normalizeWalletForCategory(config)
 
       const { fromCandidates: fromWallets, toCandidates: toWallets }
         = getTransferWalletCandidates(activeWallets, this.category)
 
-      this.addField(this.fieldsEl, t('modal.fromWallet'), () => {
-        const sel = createEl('select')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const w of fromWallets) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.fromWallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => { this.fromWallet = sel.value })
-        onPickerTouch(sel)
-        return sel
-      }, true)
+      this.addField(this.fieldsEl, t('modal.fromWallet'), () =>
+        this.buildSelect(
+          fromWallets.map(w => ({ value: w.name, label: w.name })),
+          this.fromWallet,
+          val => { this.fromWallet = val }
+        ), true)
 
-      this.addField(this.fieldsEl, t('modal.toWallet'), () => {
-        const sel = createEl('select')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const w of toWallets) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.toWallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => { this.toWallet = sel.value })
-        onPickerTouch(sel)
-        return sel
-      }, true)
+      this.addField(this.fieldsEl, t('modal.toWallet'), () =>
+        this.buildSelect(
+          toWallets.map(w => ({ value: w.name, label: w.name })),
+          this.toWallet,
+          val => { this.toWallet = val }
+        ), true)
     }
 
     this.addField(this.fieldsEl, t('modal.tags'), () => {
@@ -293,6 +254,10 @@ export class TransactionModal extends Modal {
       return input
     })
 
+    this.buildAmountRow(autoFocus)
+  }
+
+  private buildAmountRow(autoFocus: boolean) {
     const amountRow = this.fieldsEl.createDiv('pw-field-row')
     amountRow.createEl('label', { text: t('modal.amount'), cls: 'pw-field-label' })
     const amountWrapper = amountRow.createDiv('pw-amount-field-wrapper pw-field-input')
@@ -355,6 +320,28 @@ export class TransactionModal extends Modal {
     if (!this.amountPrefixEl) return
     const shouldShow = this.isRefund && this.amount !== ''
     this.amountPrefixEl.toggleClass('is-visible', shouldShow)
+  }
+
+  private attachPickerTouch(el: HTMLElement) {
+    el.addEventListener('touchstart', () => {
+      this.containerEl.removeClass('pw-modal-keyboard-open')
+    }, { passive: true })
+  }
+
+  private buildSelect(
+    options: { value: string; label: string }[],
+    current: string,
+    onChange: (val: string) => void
+  ): HTMLSelectElement {
+    const sel = createEl('select')
+    sel.createEl('option', { text: '—', value: '' })
+    for (const { value, label } of options) {
+      const opt = sel.createEl('option', { text: label, value })
+      if (value === current) opt.selected = true
+    }
+    sel.addEventListener('change', () => onChange(sel.value))
+    this.attachPickerTouch(sel)
+    return sel
   }
 
   private buildTagInput(availableTags: string[]): HTMLElement {

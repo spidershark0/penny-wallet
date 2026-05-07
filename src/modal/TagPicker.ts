@@ -233,7 +233,9 @@ export function openTagPicker(params: TagPickerParams): () => void {
     searchInput.focus()
   })
 
-  inlineAdd.addEventListener('click', submitNewTag)
+  inlineAdd.addEventListener('click', () => {
+    void submitNewTag()
+  })
 
   renderChips()
   renderAddUI()

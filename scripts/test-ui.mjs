@@ -149,7 +149,6 @@ function click(selector) {
 function ensureDesktopMode() {
   obs('dev:debug on')
   const emulateResult = evalJs('app.emulateMobile(false); true')
-  wait(1500)
   setDesktopViewport()
 
   const reloadResult = obs('plugin:reload id=penny-wallet')
@@ -486,7 +485,7 @@ section('URI handler — open modal with pre-filled fields')
 
 // Use macOS `open` to trigger the obsidian:// protocol handler
 try {
-  execSync('open "obsidian://penny-wallet?type=income&amount=5000&note=TestURI"', { timeout: 5000 })
+  execSync(`open "obsidian://penny-wallet?vault=${VAULT}&type=income&amount=5000&note=TestURI"`, { timeout: 5000 })
 } catch { /* ignore */ }
 wait(900)
 

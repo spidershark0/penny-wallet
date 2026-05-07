@@ -181,9 +181,7 @@ function closeModal() {
 section('Mobile environment')
 
 obs('dev:debug on')
-obs('dev:mobile on')
 evalJs('app.emulateMobile(true)')
-wait(1500)
 setMobileViewport()
 
 const reloadResult = obs('plugin:reload id=penny-wallet')
@@ -409,7 +407,7 @@ wait(300)
 section('Mobile URI handler')
 
 try {
-  execSync('open "obsidian://penny-wallet?type=income&amount=5000&note=MobileURI"', { timeout: 5000 })
+  execSync(`open "obsidian://penny-wallet?vault=${VAULT}&type=income&amount=5000&note=MobileURI"`, { timeout: 5000 })
 } catch { /* ignore */ }
 wait(900)
 assert('Mobile URI opens transaction modal', count('.pw-mobile-content') > 0)
@@ -423,7 +421,6 @@ console.log(`Results: ${passed} passed, ${failed} failed`)
 if (failures.length > 0) {
   console.log('\nFailed tests:')
   for (const f of failures) console.log(`  • ${f}`)
-  console.log('\nTip: mobile mode may require restarting Obsidian after `obsidian dev:mobile on`.')
   process.exit(1)
 } else {
   console.log('\nAll mobile UI checks passed.')

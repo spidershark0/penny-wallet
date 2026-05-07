@@ -1,23 +1,36 @@
 :root {
-  /* Type colors — currently dark-tuned; light theme overrides deferred */
-  --pw-income: #5DCAA5;
-  --pw-expense: #EF9F27;
-  --pw-bank: #378ADD;
-  --pw-cash: #1D9E75;
-  --pw-credit: #D85A30;
-  --pw-transfer: #85B7EB;
-  --pw-payment: #AFA9EC;
+  /* Base type colors */
+  --pw-income-base: #5DCAA5;
+  --pw-expense-base: #EF9F27;
+  --pw-bank-base: #378ADD;
+  --pw-cash-base: #1D9E75;
+  --pw-credit-base: #D85A30;
+  --pw-transfer-base: #85B7EB;
+  --pw-payment-base: #AFA9EC;
+
+  /* Global brightness knobs */
+  --pw-dark-brighten: 0%;    /* mix base with white for dark theme */
+  --pw-light-darken: 5%;    /* mix base with black for light theme */
+
+  /* Type colors — default tuned for dark theme */
+  --pw-income: color-mix(in srgb, var(--pw-income-base), white var(--pw-dark-brighten));
+  --pw-expense: color-mix(in srgb, var(--pw-expense-base), white var(--pw-dark-brighten));
+  --pw-bank: color-mix(in srgb, var(--pw-bank-base), white var(--pw-dark-brighten));
+  --pw-cash: color-mix(in srgb, var(--pw-cash-base), white var(--pw-dark-brighten));
+  --pw-credit: color-mix(in srgb, var(--pw-credit-base), white var(--pw-dark-brighten));
+  --pw-transfer: color-mix(in srgb, var(--pw-transfer-base), white var(--pw-dark-brighten));
+  --pw-payment: color-mix(in srgb, var(--pw-payment-base), white var(--pw-dark-brighten));
 
   /* Refund: lighter shade in income family */
-  --pw-refund: color-mix(in srgb, var(--pw-income) 65%, var(--background-primary) 35%);
+  --pw-refund: color-mix(in srgb, var(--pw-income) 65%, white 35%);
 
-  /* Type color tints (badge backgrounds) */
-  --pw-income-tint: rgba(29, 158, 117, 0.12);
-  --pw-expense-tint: rgba(216, 90, 48, 0.12);
-  --pw-bank-tint: rgba(55, 138, 221, 0.12);
-  --pw-credit-tint: rgba(216, 90, 48, 0.12);
-  --pw-transfer-tint: rgba(133, 183, 235, 0.15);
-  --pw-payment-tint: rgba(175, 169, 236, 0.15);
+  /* Type color tints (badge backgrounds) — dark default, slightly higher % than light to compensate dark bg */
+  --pw-income-tint: color-mix(in srgb, var(--pw-income) 12%, var(--background-primary) 88%);
+  --pw-expense-tint: color-mix(in srgb, var(--pw-expense) 12%, var(--background-primary) 88%);
+  --pw-bank-tint: color-mix(in srgb, var(--pw-bank) 12%, var(--background-primary) 88%);
+  --pw-credit-tint: color-mix(in srgb, var(--pw-credit) 12%, var(--background-primary) 88%);
+  --pw-transfer-tint: color-mix(in srgb, var(--pw-transfer) 12%, var(--background-primary) 88%);
+  --pw-payment-tint: color-mix(in srgb, var(--pw-payment) 12%, var(--background-primary) 88%);
 
   /* Card elevation */
   --pw-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -28,6 +41,38 @@
   --pw-shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.15);
   --pw-shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.4);
   --pw-shadow-overlay-above: 0 -4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.theme-light {
+  /* Type colors */
+  --pw-income: color-mix(in srgb, var(--pw-income-base), black var(--pw-light-darken));
+  --pw-expense: color-mix(in srgb, var(--pw-expense-base), black var(--pw-light-darken));
+  --pw-bank: color-mix(in srgb, var(--pw-bank-base), black var(--pw-light-darken));
+  --pw-cash: color-mix(in srgb, var(--pw-cash-base), black var(--pw-light-darken));
+  --pw-credit: color-mix(in srgb, var(--pw-credit-base), black var(--pw-light-darken));
+  --pw-transfer: color-mix(in srgb, var(--pw-transfer-base), black var(--pw-light-darken));
+  --pw-payment: color-mix(in srgb, var(--pw-payment-base), black var(--pw-light-darken));
+
+  /* Type color tints (badge backgrounds) */
+  --pw-income-tint: color-mix(in srgb, var(--pw-income) 10%, var(--background-primary) 90%);
+  --pw-expense-tint: color-mix(in srgb, var(--pw-expense) 10%, var(--background-primary) 90%);
+  --pw-bank-tint: color-mix(in srgb, var(--pw-bank) 10%, var(--background-primary) 90%);
+  --pw-credit-tint: color-mix(in srgb, var(--pw-credit) 10%, var(--background-primary) 90%);
+  --pw-transfer-tint: color-mix(in srgb, var(--pw-transfer) 10%, var(--background-primary) 90%);
+  --pw-payment-tint: color-mix(in srgb, var(--pw-payment) 10%, var(--background-primary) 90%);
+
+  /* Refund: mix ratio stays legible on light background */
+  --pw-refund: color-mix(in srgb, var(--pw-income) 80%, var(--background-primary) 20%);
+
+  /* Card elevation */
+  --pw-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --pw-card-shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.16);
+
+  /* UI component shadows — softer for light theme */
+  --pw-shadow-dropdown: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --pw-shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --pw-shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.20);
+  --pw-shadow-overlay-above: 0 -4px 16px rgba(0, 0, 0, 0.20);
 }
 
 /* ── PennyWallet Plugin Styles ── */
@@ -930,7 +975,6 @@ body.pw-bottom-sheet-lock {
 }
 
 .pw-amount-prefix {
-  color: var(--pw-refund);
   font-weight: 600;
   font-size: 16px;
   line-height: 1;
