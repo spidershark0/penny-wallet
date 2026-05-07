@@ -147,28 +147,41 @@ function click(selector) {
 }
 
 function ensureDesktopMode() {
-  obs('dev:mobile off')
-  wait(1000)
+  obs('dev:debug on')
+  const emulateResult = evalJs('app.emulateMobile(false); true')
+  wait(1500)
+  setDesktopViewport()
+
+  const reloadResult = obs('plugin:reload id=penny-wallet')
+  wait(800)
+  const state = setDesktopViewport()
+  obs('dev:debug on')
+  wait(300)
+
+  return { emulateResult, state, reloadResult }
+}
+
+function setDesktopViewport() {
   evalJs("const {remote}=require('electron'); const win=remote.getCurrentWindow(); win.setSize(1400,900);")
   wait(600)
-  return evalJs("JSON.stringify({width:window.innerWidth,height:window.innerHeight,isPhone:document.body.classList.contains('is-phone')})")
+  const raw = evalJs("JSON.stringify({width:window.innerWidth,height:window.innerHeight,isPhone:document.body.classList.contains('is-phone')})")
+  try { return JSON.parse(raw) } catch { return null }
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
+const desktopEnv = ensureDesktopMode()
+const desktopState = desktopEnv.state
 
 section('Desktop environment')
 
-const desktopEnv = ensureDesktopMode()
-let desktopState = null
-try { desktopState = JSON.parse(desktopEnv) } catch { /* keep null for assertion detail */ }
-assert('Desktop mode is active', desktopState?.isPhone === false, desktopEnv)
+assert('Desktop emulation command succeeds', desktopEnv.emulateResult === 'true', desktopEnv.emulateResult ?? 'command failed')
+assert('Desktop mode is active', desktopState?.isPhone === false, desktopState ? JSON.stringify(desktopState) : 'unavailable')
 assert('Desktop viewport is 1400x900', desktopState?.width === 1400 && desktopState?.height === 900,
-  desktopState ? `${desktopState.width}x${desktopState.height}` : desktopEnv)
+  desktopState ? `${desktopState.width}x${desktopState.height}` : 'unavailable')
 
 section('Plugin health')
 
-const reloadResult = obs('plugin:reload id=penny-wallet')
-wait(800)
+const reloadResult = desktopEnv.reloadResult
 assert('Plugin reloads without error', reloadResult !== null, reloadResult ?? 'command failed')
 
 openDashboard()

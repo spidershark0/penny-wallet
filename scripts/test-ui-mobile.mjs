@@ -87,10 +87,9 @@ function cdp(method, params) {
 
 function clickAt(point) {
   if (!point) return false
-  cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: point.x, y: point.y }] })
-  cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  const ok = evalJs(`(()=>{const el=document.elementFromPoint(${point.x},${point.y});if(!(el instanceof HTMLElement))return false;el.click();return true;})()`)
   wait(300)
-  return true
+  return ok === 'true'
 }
 
 function click(selector, predicate = '() => true') {
@@ -183,6 +182,7 @@ section('Mobile environment')
 
 obs('dev:debug on')
 obs('dev:mobile on')
+evalJs('app.emulateMobile(true)')
 wait(1500)
 setMobileViewport()
 
