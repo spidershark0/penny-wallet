@@ -70,6 +70,18 @@ export class MobileTransactionModal extends TransactionModal {
     this.mobileRowsEl = contentEl.createDiv('pw-mobile-rows')
     this.renderMobileRows(config)
 
+    // Delete row (edit mode only) — last row inside fields area
+    if (this.editingTx) {
+      const deleteBtn = this.mobileRowsEl.createEl('button', {
+        cls: 'pw-mobile-row pw-mobile-delete-row',
+        text: t('ui.delete'),
+      })
+      deleteBtn.dataset['action'] = 'delete'
+      let deleteTouched = false
+      deleteBtn.addEventListener('touchend', (e) => { e.preventDefault(); deleteTouched = true; this.handleDelete() })
+      deleteBtn.addEventListener('click', () => { if (deleteTouched) { deleteTouched = false; return } this.handleDelete() })
+    }
+
     // Numpad
     const numpadEl = contentEl.createDiv('pw-mobile-numpad')
     this.renderMobileNumpad(numpadEl)

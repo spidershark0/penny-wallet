@@ -179,6 +179,7 @@ export function openFilterSheet(params: FilterSheetParams): () => void {
     onClose: params.onClose,
     leafContext: true,
   })
+  sheet.addClass('pw-filter-sheet')
 
   const body = sheet.createDiv('pw-filter-sheet-body')
   params.buildBody(body)

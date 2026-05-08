@@ -1,13 +1,13 @@
-import { Events, ItemView, Platform, ViewStateResult, WorkspaceLeaf, Notice, setIcon } from 'obsidian'
+import { Events, ItemView, Platform, ViewStateResult, WorkspaceLeaf } from 'obsidian'
 import { WalletFile } from '../io/WalletFile'
 import { TransactionModal } from '../modal/TransactionModal'
 import { MobileTransactionModal } from '../modal/MobileTransactionModal'
-import { ConfirmModal } from '../modal/ConfirmModal'
 import { openFilterSheet } from '../modal/BottomSheetPicker'
 import { t, translateCategory } from '../i18n'
 import { Transaction, TransactionType } from '../types'
 import { currentYearMonth, formatAmount } from '../utils'
 import { renderSharedHeader } from './SharedHeader'
+import { buildAmountDisplay, buildLine3Display, buildWalletText } from './detailRow'
 
 export const DETAIL_VIEW_TYPE = 'penny-wallet-detail'
 
@@ -29,7 +29,6 @@ export class DetailView extends ItemView {
   private listEl: HTMLElement | null = null
   private listWrapEl: HTMLElement | null = null
   private subtotalEl: HTMLElement | null = null
-  private _revealCleanup: (() => void) | null = null
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -53,7 +52,6 @@ export class DetailView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
-    this.register(() => { this._revealCleanup?.() })
     await this.render()
   }
 
@@ -448,22 +446,6 @@ export class DetailView extends ItemView {
         bodyEl = sheet
         this.buildFilterSheetBody(sheet, rerenderBody)
       },
-      buildFooter: (footer) => {
-        const clearBtn = footer.createEl('button', {
-          cls: 'pw-action-btn pw-filter-clear-all',
-          text: t('detail.filterClearAll'),
-        })
-        clearBtn.addEventListener('click', () => {
-          this.filterTypes.clear()
-          this.filterCategories.clear()
-          this.filterWallet = null
-          this.filterDateFrom = null
-          this.filterDateTo = null
-          this.filterSearch = ''
-          rerenderBody()
-          this.applyFilters()
-        })
-      },
       onCancel: () => {
         this.filterTypes = snapshot.types
         this.filterCategories = snapshot.categories
@@ -632,6 +614,22 @@ export class DetailView extends ItemView {
         this.applyFilters()
       })
     }
+
+    // Clear-all button — pinned at bottom of body
+    const clearBtn = sheet.createEl('button', {
+      cls: 'pw-action-btn pw-filter-clear-all',
+      text: t('detail.filterClearAll'),
+    })
+    clearBtn.addEventListener('click', () => {
+      this.filterTypes.clear()
+      this.filterCategories.clear()
+      this.filterWallet = null
+      this.filterDateFrom = null
+      this.filterDateTo = null
+      this.filterSearch = ''
+      rerender()
+      this.applyFilters()
+    })
   }
 
   private applyFilters() {
@@ -659,7 +657,6 @@ export class DetailView extends ItemView {
       return true
     })
 
-    this._revealCleanup?.()
     this.listEl.empty()
     if (filtered.length === 0) {
       this.listEl.createEl('p', { text: t('detail.noTransactions'), cls: 'pw-no-data' })
@@ -689,84 +686,43 @@ export class DetailView extends ItemView {
     const row = container.createDiv('pw-tx-row')
     row.dataset['testid'] = 'tx-row'
 
+    // col1: date (V-center, large)
     row.createEl('span', { text: tx.date, cls: 'pw-tx-date' })
 
+    // col2: type badge (V-center)
     row.createEl('span', {
       text: t(`type.${tx.type}`),
       cls: `pw-type-badge pw-type-${tx.type}`,
     })
 
-    const main = row.createDiv('pw-tx-main')
-
-    // Line 1: category + wallet
-    const top = main.createDiv('pw-tx-top')
-    const catText = translateCategory(tx.category ?? '')
-    top.createEl('span', { text: catText, cls: 'pw-tx-cat' })
-    const walletText = tx.wallet ?? (tx.fromWallet && tx.toWallet ? `${tx.fromWallet} → ${tx.toWallet}` : '—')
-    top.createEl('span', { text: walletText, cls: 'pw-tx-wallet' })
-
-    // Line 2: tags + note (only rendered if data exists)
-    if (tx.tags?.length || tx.note) {
-      const bottom = main.createDiv('pw-tx-bottom')
-      if (tx.tags?.length) {
-        const tagsEl = bottom.createSpan('pw-tx-tags')
-        for (const tag of tx.tags) {
-          const tagChip = tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
-          tagChip.dataset['testid'] = 'tx-tag-chip'
-          tagChip.dataset['tag'] = tag
-        }
-      }
-      if (tx.note) bottom.createEl('span', { text: tx.note, cls: 'pw-tx-note' })
-    }
-
-    const isRefund = tx.type === 'expense' && tx.amount < 0
-    const amountCls = isRefund ? 'pw-tx-amount is-refund'
-      : tx.type === 'income' ? 'pw-tx-amount is-income'
-      : tx.type === 'expense' ? 'pw-tx-amount is-expense'
-      : 'pw-tx-amount'
-    const amountPrefix = isRefund ? '+' : tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''
-    const displayAmount = isRefund ? -tx.amount : tx.amount
-    row.createEl('span', {
-      text: amountPrefix + formatAmount(displayAmount, dp),
-      cls: amountCls,
+    // col3: 3-row stack — category / wallet / tags-or-note
+    const stack = row.createDiv('pw-tx-row-stack')
+    stack.createEl('div', {
+      text: translateCategory(tx.category ?? ''),
+      cls: 'pw-tx-category',
     })
+    stack.createEl('div', { text: buildWalletText(tx), cls: 'pw-tx-wallet' })
 
-    const actions = row.createDiv('pw-tx-actions')
-
-    if (Platform.isMobile) {
-      let timer: ReturnType<typeof setTimeout> | null = null
-      row.addEventListener('touchstart', () => {
-        timer = setTimeout(() => {
-          this._revealCleanup?.()
-          row.addClass('is-revealed')
-          const onOutside = (ev: TouchEvent) => {
-            if (!row.contains(ev.target as Node)) {
-              row.removeClass('is-revealed')
-              document.removeEventListener('touchstart', onOutside)
-              this._revealCleanup = null
-            }
-          }
-          document.addEventListener('touchstart', onOutside)
-          this._revealCleanup = () => {
-            document.removeEventListener('touchstart', onOutside)
-            this._revealCleanup = null
-          }
-        }, 500)
-      }, { passive: true })
-      row.addEventListener('touchmove', () => {
-        if (timer) { clearTimeout(timer); timer = null }
-      }, { passive: true })
-      row.addEventListener('touchend', () => {
-        if (timer) { clearTimeout(timer); timer = null }
-      })
+    const line3 = stack.createDiv('pw-tx-row-line3')
+    const display = buildLine3Display(tx)
+    if (display.kind === 'tags') {
+      const tagsEl = line3.createSpan('pw-tx-tags')
+      for (const tag of display.tags) {
+        const chip = tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
+        chip.dataset['testid'] = 'tx-tag-chip'
+        chip.dataset['tag'] = tag
+      }
+    } else if (display.kind === 'note') {
+      line3.createEl('span', { text: display.text, cls: 'pw-tx-note' })
+    } else {
+      line3.createEl('span', { text: '—', cls: 'pw-tx-empty' })
     }
 
-    const editBtn = actions.createEl('button', { cls: 'pw-txn-btn' })
-    editBtn.setAttribute('aria-label', t('ui.edit'))
-    editBtn.dataset['action'] = 'edit'
-    setIcon(editBtn, 'pencil')
-    editBtn.addEventListener('click', () => {
-      editBtn.disabled = true
+    // col4: amount (V-center, large)
+    const amount = buildAmountDisplay(tx, dp)
+    row.createEl('span', { text: amount.text, cls: amount.className })
+
+    row.addEventListener('click', () => {
       const ModalClass = Platform.isMobile ? MobileTransactionModal : TransactionModal
       new ModalClass(
         this.app,
@@ -775,29 +731,8 @@ export class DetailView extends ItemView {
         tx,
         this.currentYearMonth,
         () => (this.app.workspace as Events).trigger('penny-wallet:refresh'),
-        () => { editBtn.disabled = false },
+        null,
       ).open()
     })
-
-    const deleteBtn = actions.createEl('button', { cls: 'pw-txn-btn pw-txn-btn-del' })
-    deleteBtn.setAttribute('aria-label', t('ui.delete'))
-    deleteBtn.dataset['action'] = 'delete'
-    setIcon(deleteBtn, 'trash')
-    deleteBtn.addEventListener('click', () => {
-      this.confirmDelete(tx)
-    })
-  }
-
-  private confirmDelete(tx: Transaction) {
-    const modal = new ConfirmModal(
-      this.app,
-      t('confirm.deleteTransaction'),
-      async () => {
-        await this.walletFile.deleteTransaction(tx, this.currentYearMonth)
-        new Notice(t('notice.transactionDeleted'));
-        (this.app.workspace as Events).trigger('penny-wallet:refresh')
-      },
-    )
-    modal.open()
   }
 }

@@ -96,7 +96,7 @@ else
 fi
 
 # 7. :focus-visible rules exist for required selectors
-for sel in pw-action-btn pw-nav-btn pw-pill pw-range-btn pw-txn-btn pw-cat-toggle; do
+for sel in pw-action-btn pw-nav-btn pw-pill pw-range-btn pw-cat-toggle; do
   if grep -qE "\.${sel}:focus-visible" "$CSS"; then
     pass ":focus-visible exists for .${sel}"
   else
