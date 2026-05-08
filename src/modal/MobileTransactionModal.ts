@@ -1,7 +1,11 @@
+import { setIcon } from 'obsidian'
 import { TransactionType, PennyWalletConfig } from '../types'
 import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
-import { validateTag } from '../utils'
+import { formatMobileHeroAmount } from '../utils'
+import { getTransferWalletCandidates } from './transactionState'
+import { openBottomSheetPicker, type BottomSheetOption } from './BottomSheetPicker'
+import { openTagPicker } from './TagPicker'
 
 export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
@@ -41,6 +45,14 @@ export class MobileTransactionModal extends TransactionModal {
     confirmBtn.addEventListener('touchend', (e) => { e.preventDefault(); confirmTouched = true; void this.handleConfirm() })
     confirmBtn.addEventListener('click', () => { if (confirmTouched) { confirmTouched = false; return } void this.handleConfirm() })
 
+    if (this.editingTx) {
+      const titleEl = topBar.querySelector<HTMLElement>('.pw-mobile-top-title')
+      if (titleEl) {
+        const iconEl = titleEl.createSpan('pw-modal-title-icon')
+        setIcon(iconEl, 'pencil')
+      }
+    }
+
     // Type tabs
     this.mobileTabsEl = contentEl.createDiv('pw-mobile-tabs')
     this.renderMobileTabs(config)
@@ -61,6 +73,29 @@ export class MobileTransactionModal extends TransactionModal {
     // Numpad
     const numpadEl = contentEl.createDiv('pw-mobile-numpad')
     this.renderMobileNumpad(numpadEl)
+
+    this.bindMobileTextFocusState()
+  }
+
+  private bindMobileTextFocusState() {
+    const isTextKeyboardTarget = (target: EventTarget | null): target is HTMLElement => {
+      return target instanceof HTMLElement &&
+        target.matches('.pw-mobile-note-input, .pw-bottom-sheet-search, .pw-tag-picker-add-input')
+    }
+
+    this.contentEl.addEventListener('focusin', (e) => {
+      if (isTextKeyboardTarget(e.target)) {
+        this.contentEl.addClass('pw-mobile-text-focus')
+      }
+    })
+
+    this.contentEl.addEventListener('focusout', () => {
+      window.setTimeout(() => {
+        if (!isTextKeyboardTarget(document.activeElement)) {
+          this.contentEl.removeClass('pw-mobile-text-focus')
+        }
+      }, 0)
+    })
   }
 
   private renderMobileTabs(config: PennyWalletConfig) {
@@ -72,13 +107,7 @@ export class MobileTransactionModal extends TransactionModal {
         cls: 'pw-mobile-tab' + (this.type === tp ? ' is-active' : ''),
       })
       tab.addEventListener('click', () => {
-        this.type = tp
-        if (tp === 'expense' || tp === 'income') {
-          this.fromWallet = ''
-          this.toWallet = ''
-        } else {
-          this.wallet = ''
-        }
+        this.resetStateForType(tp)
         this.renderMobileTabs(config)
         this.renderMobileRows(config)
       })
@@ -87,7 +116,23 @@ export class MobileTransactionModal extends TransactionModal {
 
   private renderMobileRows(config: PennyWalletConfig) {
     this.mobileRowsEl.empty()
-    const activeWallets = config.wallets.filter(w => w.status === 'active')
+    const activeWallets = this.getActiveWallets(config)
+
+    // Refund toggle first (expense only) — sub-option of the type tab, visually adjacent.
+    if (this.type === 'expense') {
+      const block = this.mobileRowsEl.createDiv('pw-refund-block')
+      const refundRow = block.createDiv('pw-mobile-row pw-mobile-refund-row')
+      const checkboxId = 'pw-mobile-refund-checkbox'
+      refundRow.createEl('label', { cls: 'pw-mobile-row-label', text: t('modal.isRefund'), attr: { for: checkboxId } })
+      const checkbox = refundRow.createEl('input', { type: 'checkbox' })
+      checkbox.id = checkboxId
+      checkbox.checked = this.isRefund
+      checkbox.addEventListener('change', () => {
+        this.isRefund = checkbox.checked
+        this.updateAmountDisplay()
+      })
+      block.createDiv({ cls: 'pw-mobile-refund-hint-row', text: t('modal.isRefund.hint') })
+    }
 
     // Date Picker
     let dateInput!: HTMLInputElement
@@ -104,247 +149,120 @@ export class MobileTransactionModal extends TransactionModal {
         return dateInput
       },
       () => dateInput.focus(),
-    )
+    ).addClass('pw-mobile-date-row')
 
     if (this.type === 'expense' || this.type === 'income') {
       // Category
       const categories = this.getCategoryOptions(config)
       const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.category'), catLabel, (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const { key, label } of categories) {
-          const opt = sel.createEl('option', { text: label, value: key })
-          if (key === this.category) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.category = sel.value
-          const found = categories.find(c => c.key === this.category)
-          valueEl.textContent = found?.label ?? (this.category || '—')
-        })
-        return sel
-      })
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.category'),
+        catLabel,
+        this.withEmptyOption(categories),
+        () => this.category,
+        (key) => { this.category = key },
+        true,
+      )
 
       // Wallet
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.wallet'), this.wallet || '—', (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const w of activeWallets) {
-          const opt = sel.createEl('option', { text: w.name, value: w.name })
-          if (w.name === this.wallet) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.wallet = sel.value
-          valueEl.textContent = this.wallet || '—'
-        })
-        return sel
-      })
+      const walletOptions = this.type === 'income'
+        ? activeWallets.filter(w => w.type !== 'creditCard')
+        : activeWallets
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.wallet'),
+        this.wallet || '—',
+        this.withEmptyOption(walletOptions.map(w => ({ key: w.name, label: w.name }))),
+        () => this.wallet,
+        (key) => { this.wallet = key },
+        true,
+      )
+
     } else {
       // Category
       const categories = this.getCategoryOptions(config)
       const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
-      this.addMobilePickerRow(this.mobileRowsEl, t('modal.category'), catLabel, (valueEl) => {
-        const sel = createEl('select')
-        sel.addClass('pw-mobile-row-picker')
-        sel.createEl('option', { text: '—', value: '' })
-        for (const { key, label } of categories) {
-          const opt = sel.createEl('option', { text: label, value: key })
-          if (key === this.category) opt.selected = true
-        }
-        sel.addEventListener('change', () => {
-          this.category = sel.value
-          const found = categories.find(c => c.key === this.category)
-          valueEl.textContent = found?.label ?? (this.category || '—')
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.category'),
+        catLabel,
+        this.withEmptyOption(categories),
+        () => this.category,
+        (key) => {
+          this.category = key
           this.renderMobileRows(config)
-        })
-        return sel
-      })
+        },
+        true,
+      )
 
       // Normalize wallet state when category constrains wallet types
-      if (this.category === 'credit_card_payment') {
-        const fromType = config.wallets.find(w => w.name === this.fromWallet)?.type
-        const toType   = config.wallets.find(w => w.name === this.toWallet)?.type
-        if (fromType === 'creditCard') this.fromWallet = ''
-        if (toType && toType !== 'creditCard') this.toWallet = ''
-      } else if (this.category === 'credit_card_refund') {
-        const fromType = config.wallets.find(w => w.name === this.fromWallet)?.type
-        if (fromType && fromType !== 'creditCard') this.fromWallet = ''
-        this.toWallet = this.fromWallet
-      }
+      this.normalizeWalletForCategory(config)
 
-      if (this.category === 'credit_card_refund') {
-        // Single account field — always a credit card
-        const ccWallets = activeWallets.filter(w => w.type === 'creditCard')
-        this.addMobilePickerRow(this.mobileRowsEl, t('modal.wallet'), this.fromWallet || '—', (valueEl) => {
-          const sel = createEl('select')
-          sel.addClass('pw-mobile-row-picker')
-          sel.createEl('option', { text: '—', value: '' })
-          for (const w of ccWallets) {
-            const opt = sel.createEl('option', { text: w.name, value: w.name })
-            if (w.name === this.fromWallet) opt.selected = true
-          }
-          sel.addEventListener('change', () => {
-            this.fromWallet = sel.value
-            this.toWallet = sel.value
-            valueEl.textContent = this.fromWallet || '—'
-          })
-          return sel
-        })
-      } else {
-        const fromWallets = this.category === 'credit_card_payment'
-          ? activeWallets.filter(w => w.type !== 'creditCard')
-          : activeWallets
-        const toWallets = this.category === 'credit_card_payment'
-          ? activeWallets.filter(w => w.type === 'creditCard')
-          : activeWallets
+      const { fromCandidates: fromWallets, toCandidates: toWallets }
+        = getTransferWalletCandidates(activeWallets, this.category)
 
-        // From wallet
-        this.addMobilePickerRow(this.mobileRowsEl, t('modal.fromWallet'), this.fromWallet || '—', (valueEl) => {
-          const sel = createEl('select')
-          sel.addClass('pw-mobile-row-picker')
-          sel.createEl('option', { text: '—', value: '' })
-          for (const w of fromWallets) {
-            const opt = sel.createEl('option', { text: w.name, value: w.name })
-            if (w.name === this.fromWallet) opt.selected = true
-          }
-          sel.addEventListener('change', () => {
-            this.fromWallet = sel.value
-            valueEl.textContent = this.fromWallet || '—'
-          })
-          return sel
-        })
+      // From wallet
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.fromWallet'),
+        this.fromWallet || '—',
+        this.withEmptyOption(fromWallets.map(w => ({ key: w.name, label: w.name }))),
+        () => this.fromWallet,
+        (key) => { this.fromWallet = key },
+        true,
+      )
 
-        // To wallet
-        this.addMobilePickerRow(this.mobileRowsEl, t('modal.toWallet'), this.toWallet || '—', (valueEl) => {
-          const sel = createEl('select')
-          sel.addClass('pw-mobile-row-picker')
-          sel.createEl('option', { text: '—', value: '' })
-          for (const w of toWallets) {
-            const opt = sel.createEl('option', { text: w.name, value: w.name })
-            if (w.name === this.toWallet) opt.selected = true
-          }
-          sel.addEventListener('change', () => {
-            this.toWallet = sel.value
-            valueEl.textContent = this.toWallet || '—'
-          })
-          return sel
-        })
-      }
+      // To wallet
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.toWallet'),
+        this.toWallet || '—',
+        this.withEmptyOption(toWallets.map(w => ({ key: w.name, label: w.name }))),
+        () => this.toWallet,
+        (key) => { this.toWallet = key },
+        true,
+      )
     }
 
-    // Tags
+    // Tags — chips-or-placeholder row, taps anywhere to open multi-select picker
     const tagRow = this.mobileRowsEl.createDiv('pw-mobile-row')
     tagRow.createEl('span', { cls: 'pw-mobile-row-label', text: t('modal.tags') })
     const tagWrapper = tagRow.createDiv('pw-tag-input-wrapper')
-    const tagChipsEl = tagWrapper.createDiv('pw-tag-chips')
-    const tagInput = tagWrapper.createEl('input', {
-      type: 'text',
-      cls: 'pw-tag-input',
-      placeholder: t('modal.tagsPlaceholder'),
-    })
-    tagInput.setAttribute('enterkeyhint', 'done')
-    const tagDropdown = tagWrapper.createDiv('pw-tag-dropdown')
-    tagDropdown.hide()
-
-    const availableTags = this.walletFile.getConfig().tags
-
-    const TAG_DROPDOWN_MAX_H_ABOVE = 152 // must match CSS .pw-tag-dropdown--above
-    const TAG_DROPDOWN_MAX_H_BELOW = 320 // must match CSS .pw-tag-dropdown default
-    let tagInputFocused = false
-
-    const repositionMobDropdown = () => {
-      if (tagDropdown.style.display === 'none') return
-      const rect = tagInput.getBoundingClientRect()
-      if (tagInputFocused) {
-        // keyboard open: show above
-        tagDropdown.addClass('pw-tag-dropdown--above')
-        tagDropdown.style.top = `${rect.top - TAG_DROPDOWN_MAX_H_ABOVE - 2}px`
-      } else {
-        // no keyboard: show below
-        tagDropdown.removeClass('pw-tag-dropdown--above')
-        tagDropdown.style.top = `${rect.bottom + 2}px`
-        void TAG_DROPDOWN_MAX_H_BELOW // referenced to avoid unused warning
-      }
-      tagDropdown.style.left = `${rect.left}px`
-      tagDropdown.style.width = `${rect.width}px`
-    }
-
-    const updateMobDropdown = () => {
-      const val = tagInput.value.replace(/^#/, '').toLowerCase()
-      const suggestions = availableTags.filter(tag =>
-        !this.tags.includes(tag) && (val === '' || tag.toLowerCase().includes(val))
-      )
-      tagDropdown.empty()
-      if (suggestions.length === 0) { tagDropdown.hide(); return }
-      for (const tag of suggestions) {
-        const item = tagDropdown.createDiv({ cls: 'pw-tag-dropdown-item', text: tag })
-        item.addEventListener('mousedown', (e) => { e.preventDefault(); addMobTag(tag); updateMobDropdown() })
-      }
-      tagDropdown.show()
-      repositionMobDropdown()
-    }
-
-    window.visualViewport?.addEventListener('resize', repositionMobDropdown)
-    this.viewportCleanups.push(() => window.visualViewport?.removeEventListener('resize', repositionMobDropdown))
+    const tagChipsEl = tagWrapper.createDiv('pw-mobile-tag-chips')
 
     const renderMobChips = () => {
       tagChipsEl.empty()
+      if (this.tags.length === 0) {
+        tagChipsEl.createSpan({
+          cls: 'pw-mobile-tag-row-placeholder',
+          text: t('tagPicker.rowPlaceholder'),
+        })
+        return
+      }
       for (const tag of this.tags) {
-        const chip = tagChipsEl.createSpan('pw-tag-chip')
-        chip.createSpan({ text: `#${tag}` })
-        const x = chip.createSpan({ text: '×', cls: 'pw-tag-chip-remove' })
-        x.addEventListener('click', () => {
-          this.tags = this.tags.filter(t => t !== tag)
-          renderMobChips()
-          if (this.tags.length < 3) tagInput.removeAttribute('disabled')
+        // Display-only chips that match the picker's selected style (oval, accent).
+        // Tap anywhere on the row (chip or whitespace) opens the picker (B1).
+        tagChipsEl.createSpan({
+          cls: 'pw-tag-picker-chip is-selected',
+          text: `#${tag}`,
         })
       }
     }
 
-    const addMobTag = (value?: string) => {
-      const raw = (value ?? tagInput.value).replace(/^#/, '').trim()
-      if (!raw) return
-      if (!validateTag(raw)) { tagInput.value = ''; tagDropdown.hide(); return }
-      if (this.tags.includes(raw)) { tagInput.value = ''; tagDropdown.hide(); return }
-      if (this.tags.length >= 3) return
-      this.tags = [...this.tags, raw]
-      tagInput.value = ''
-      tagDropdown.hide()
-      renderMobChips()
-      if (this.tags.length >= 3) tagInput.setAttribute('disabled', 'true')
-    }
+    tagChipsEl.addEventListener('click', () => {
+      openTagPicker({
+        containerEl: this.contentEl,
+        walletFile: this.walletFile,
+        initialSelected: this.tags,
+        onCommit: (selected) => {
+          this.tags = selected
+          renderMobChips()
+        },
+      })
+    })
 
-    // Keyboard dismiss toolbar (iOS: fixed bar pushed above keyboard)
-    const kbToolbar = this.contentEl.createDiv('pw-kb-toolbar')
-    kbToolbar.hide()
-    const doneBtn = kbToolbar.createEl('button', { cls: 'pw-kb-toolbar-done', text: t('modal.done') })
-    doneBtn.addEventListener('mousedown', (e) => e.preventDefault()) // prevent blur before click
-    doneBtn.addEventListener('click', () => tagInput.blur())
-    this.viewportCleanups.push(() => kbToolbar.remove())
-
-    tagInput.addEventListener('input', updateMobDropdown)
-    tagInput.addEventListener('focus', () => {
-      tagInputFocused = true
-      kbToolbar.show()
-      updateMobDropdown()
-      setTimeout(() => {
-        tagInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        repositionMobDropdown()
-      }, 300)
-    })
-    tagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addMobTag() }
-      if (e.key === 'Escape') tagDropdown.hide()
-    })
-    tagInput.addEventListener('blur', () => {
-      tagInputFocused = false
-      setTimeout(() => { tagDropdown.hide(); kbToolbar.hide() }, 150)
-      addMobTag()
-    })
     renderMobChips()
-    if (this.tags.length >= 3) tagInput.setAttribute('disabled', 'true')
 
     // Note
     const noteRow = this.mobileRowsEl.createDiv('pw-mobile-row')
@@ -366,13 +284,57 @@ export class MobileTransactionModal extends TransactionModal {
     initialValue: string,
     buildPicker: (valueEl: HTMLElement) => HTMLElement,
     onRowClick?: () => void,
-  ) {
+  ): HTMLElement {
     const row = container.createDiv('pw-mobile-row')
     row.createEl('span', { cls: 'pw-mobile-row-label', text: label })
     const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
     const picker = buildPicker(valueEl)
     row.appendChild(picker)
     if (onRowClick) row.addEventListener('click', onRowClick)
+    return row
+  }
+
+  private addMobileBottomSheetRow(
+    container: HTMLElement,
+    label: string,
+    initialValue: string,
+    options: BottomSheetOption[],
+    getSelected: () => string,
+    onSelect: (key: string) => void,
+    required = false,
+  ) {
+    const row = container.createDiv('pw-mobile-row pw-mobile-bottom-sheet-row')
+    row.setAttribute('role', 'button')
+    row.tabIndex = 0
+    const labelEl = row.createEl('span', { cls: 'pw-mobile-row-label', text: label })
+    if (required) labelEl.createEl('span', { text: '*', cls: 'pw-field-required', attr: { 'aria-hidden': 'true' } })
+    const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
+
+    const openPicker = () => {
+      openBottomSheetPicker({
+        containerEl: this.contentEl,
+        title: label,
+        options,
+        selected: getSelected(),
+        searchable: true,
+        onSelect: (key) => {
+          onSelect(key)
+          const found = options.find(option => option.key === key)
+          valueEl.textContent = found?.label ?? (key || '—')
+        },
+      })
+    }
+
+    row.addEventListener('click', openPicker)
+    row.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      e.preventDefault()
+      openPicker()
+    })
+  }
+
+  private withEmptyOption(options: BottomSheetOption[]): BottomSheetOption[] {
+    return [{ key: '', label: '—' }, ...options]
   }
 
   private renderMobileNumpad(el: HTMLElement) {
@@ -472,7 +434,9 @@ export class MobileTransactionModal extends TransactionModal {
 
   private updateAmountDisplay() {
     if (!this.mobileAmountEl) return
-    this.mobileAmountEl.textContent = this.amount || '0'
+    const isEmpty = this.amount === ''
+    this.mobileAmountEl.textContent = formatMobileHeroAmount(this.amount, this.isRefund)
+    this.mobileAmountEl.toggleClass('is-empty', isEmpty)
   }
 
   private formatMobileDate(): string {
@@ -482,7 +446,10 @@ export class MobileTransactionModal extends TransactionModal {
   onClose() {
     this.viewportCleanups.forEach(fn => fn())
     this.viewportCleanups = []
+    document.body.removeClass('pw-bottom-sheet-lock')
     this.containerEl.removeClass('pw-transaction-modal-container')
+    this.contentEl.removeClass('pw-bottom-sheet-active')
+    this.contentEl.removeClass('pw-mobile-text-focus')
     super.onClose()
   }
 }

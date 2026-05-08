@@ -32,27 +32,29 @@ netAsset: 0
 
 ## 2026-04
 
-| Date  | Type      | Wallet        | From         | To            | Category | Note      | Amount | CreatedAt                |
-|-------|-----------|---------------|--------------|---------------|----------|-----------|--------|---------------------------|
-| 04/15 | income    | HSBC Savings  | -            | -             | salary   | April pay | 72000  | 2026-04-15T08:12:00.000Z |
-| 04/12 | expense   | Visa Platinum | -            | -             | shopping | Groceries | 1200   | 2026-04-12T14:30:00.000Z |
-| 04/10 | expense   | Cash          | -            | -             | food     | Lunch     | 280    | 2026-04-10T12:05:00.000Z |
-| 04/05 | transfer  | -             | HSBC Savings | Cash          | -        | ATM       | 8000   | 2026-04-05T09:00:00.000Z |
-| 04/28 | repayment | -             | HSBC Savings | Visa Platinum | -        | Card bill | 5000   | 2026-04-28T10:00:00.000Z |
+| Date  | Type      | Wallet        | From         | To            | Category | Note      | Tags        | Amount | CreatedAt                |
+|-------|-----------|---------------|--------------|---------------|----------|-----------|-------------|--------|---------------------------|
+| 04/15 | income    | HSBC Savings  | -            | -             | salary   | April pay | salary      | 72000  | 2026-04-15T08:12:00.000Z |
+| 04/12 | expense   | Visa Platinum | -            | -             | shopping | Groceries | home,weekly | 1200   | 2026-04-12T14:30:00.000Z |
+| 04/11 | expense   | Visa Platinum | -            | -             | shopping | Return    | -           | -320   | 2026-04-11T16:20:00.000Z |
+| 04/10 | expense   | Cash          | -            | -             | food     | Lunch     | work        | 280    | 2026-04-10T12:05:00.000Z |
+| 04/05 | transfer  | -             | HSBC Savings | Cash          | -        | ATM       | -           | 8000   | 2026-04-05T09:00:00.000Z |
+| 04/28 | transfer  | -             | HSBC Savings | Visa Platinum | credit_card_payment | Card bill | - | 5000 | 2026-04-28T10:00:00.000Z |
 ```
 
 ### Column Reference
 
-| Column | expense / income | transfer / repayment |
+| Column | expense / income | transfer |
 |--------|-----------------|----------------------|
 | Date | `MM/DD` | `MM/DD` |
-| Type | `expense` / `income` | `transfer` / `repayment` |
+| Type | `expense` / `income` | `transfer` |
 | Wallet | account name | `-` |
 | From | `-` | source account |
 | To | `-` | destination account |
-| Category | category key or custom name | `-` |
+| Category | category key or custom name | transfer category key or custom name |
 | Note | optional text | optional text |
-| Amount | positive number | positive number |
+| Tags | comma-separated tags or `-` | comma-separated tags or `-` |
+| Amount | positive number; refund expenses use a negative number | positive number |
 | CreatedAt | ISO 8601 UTC timestamp | ISO 8601 UTC timestamp |
 
 ### Frontmatter Cache
@@ -89,12 +91,15 @@ Stored at the **vault root** (not inside the transactions folder).
   "folderName": "PennyWallet",
   "decimalPlaces": 0,
   "options": {
-    "types": { "default": ["expense", "income", "transfer", "repayment"], "custom": [] },
+    "types": { "default": ["expense", "income", "transfer"], "custom": [] },
     "categories": {
-      "expense": { "default": ["food", "transport", "shopping", "entertainment", "medical", "housing", "other"], "custom": ["Coffee"] },
-      "income":  { "default": ["salary", "bonus", "side_income", "other"], "custom": [] }
+      "expense": { "default": ["food", "clothing", "housing", "transport", "education", "entertainment", "shopping", "medical", "cash_expense", "insurance", "fees", "tax"], "custom": ["Coffee"] },
+      "income":  { "default": ["salary", "interest", "side_income", "bonus", "lottery", "rent", "cashback", "dividend", "investment_profit", "insurance_income", "pension"], "custom": [] },
+      "transfer": { "default": ["account_transfer", "credit_card_payment", "investment_trade"], "custom": [] }
     }
-  }
+  },
+  "tags": [],
+  "autoValidateOnLoad": true
 }
 ```
 
@@ -143,6 +148,7 @@ You can edit the Markdown files directly in Obsidian. Follow the column format e
 - Dates must be `MM/DD`
 - Use `-` for unused columns (not empty)
 - Amount must be a plain number (no currency symbols or commas)
+- Refunds are stored as `expense` rows with a negative amount
 - `CreatedAt` is auto-assigned when writing through the UI — do not edit it manually, as it is used for stable same-date ordering
 
 After manual edits, PennyWallet will re-read the file on the next view render. The frontmatter cache will be updated automatically on the next transaction write to that month.

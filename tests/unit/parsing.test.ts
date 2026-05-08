@@ -74,6 +74,14 @@ describe('parseRow', () => {
     const line = '| 04/03 | expense | 現金 | - | - | food | 咖啡 | 49.5 |'
     expect(parseRow(line)?.amount).toBe(49.5)
   })
+
+  it('parses negative amount (refund)', () => {
+    const line = '| 04/15 | expense | Bank | - | - | food | 退款 | -400 |'
+    const tx = parseRow(line)
+    expect(tx?.amount).toBe(-400)
+    expect(tx?.type).toBe('expense')
+    expect(tx?.note).toBe('退款')
+  })
 })
 
 // ── parseMonthFile ────────────────────────────────────────────────────────────
@@ -208,6 +216,18 @@ describe('formatRow — tags', () => {
     }
     const row = formatRow(tx)
     expect(row).toContain('| - | 250 |')  // tags dash, then amount
+  })
+})
+
+describe('formatRow', () => {
+  it('round-trips negative amount (refund)', () => {
+    const tx: Transaction = {
+      date: '04/15', type: 'expense', wallet: 'Bank', category: 'food',
+      note: '退款', amount: -400,
+    }
+    const row = formatRow(tx)
+    const parsed = parseRow(row)
+    expect(parsed?.amount).toBe(-400)
   })
 })
 

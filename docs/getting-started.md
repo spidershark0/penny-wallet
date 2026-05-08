@@ -11,7 +11,7 @@
 
 ### Community Plugin Store
 
-Search **PennyWallet** in **Settings → Community Plugins → Browse**, then install and enable.
+PennyWallet is not yet listed in the Community Plugin Store.
 
 ---
 
@@ -48,11 +48,12 @@ Alternatively, use these Command Palette commands (`Cmd+P`):
 | `PennyWallet: Refresh views` | Refresh all open PennyWallet views |
 
 Fill in:
-- **Type** — Expense, Income, Transfer, or Repayment
+- **Type** — Expense, Income, or Transfer
 - **Date** — defaults to today
 - **Account** — which account to record against
 - **Category** — choose from the list or leave blank
 - **Note** — optional description
+- **Tags** — optional labels; on mobile, tap the tag row to open the picker
 - **Amount**
 
 Press **Confirm** to save.

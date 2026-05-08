@@ -165,7 +165,8 @@ Tests are written with [Vitest](https://vitest.dev/) and live in `tests/`. The U
 Before opening a PR, verify the following:
 
 **Transactions**
-- [ ] Add expense / income / transfer / repayment — all save correctly
+- [ ] Add expense / income / transfer — all save correctly
+- [ ] Add refund expense — saved as a negative expense and displayed as an expense reversal
 - [ ] Edit a transaction in the same month
 - [ ] Edit a transaction changing its date to a different month (cross-month move)
 - [ ] Delete a transaction — confirm dialog appears, balance updates
@@ -179,7 +180,7 @@ Before opening a PR, verify the following:
 
 **Credit Card**
 - [ ] Record expense on credit card — debt increases
-- [ ] Record repayment from bank to credit card — both balances update
+- [ ] Record credit card payment transfer from bank to credit card — both balances update
 - [ ] Net asset reflects credit card debt as negative
 
 **Finance Overview**

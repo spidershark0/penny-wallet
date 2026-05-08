@@ -1,11 +1,15 @@
 import esbuild from 'esbuild'
+import { exec } from 'child_process'
 import { watch as fsWatch } from 'fs'
 import { copyFile, mkdir } from 'fs/promises'
 import { dirname, join } from 'path'
+import { promisify } from 'util'
 import console from 'console'
 import process from 'process'
 import { builtinModules as builtins } from 'module'
 import { fileURLToPath } from 'url'
+
+const execAsync = promisify(exec)
 
 const banner = `/*
 THIS IS A GENERATED/COMPILED FILE AND NOT MEANT TO BE EDITED.
@@ -23,6 +27,29 @@ const watchedAssetNames = new Set(['manifest.json', 'styles.css'])
 let syncInFlight = false
 let syncQueued = false
 
+async function reloadObsidian() {
+  let isRunning = false
+  try {
+    await execAsync('pgrep -q Obsidian')
+    isRunning = true
+  } catch {
+    // pgrep exit code 1 = not running
+  }
+
+  if (!isRunning) {
+    exec('open "obsidian://open?vault=demo-vault"')
+    console.log('[dev-sync] Obsidian not running — opened demo-vault')
+    return
+  }
+
+  try {
+    await execAsync('obsidian plugin:reload id=penny-wallet vault="demo-vault"')
+    console.log('[dev-sync] Plugin reloaded in Obsidian')
+  } catch (err) {
+    console.warn('[dev-sync] Reload failed:', err.message?.split('\n')[0])
+  }
+}
+
 async function syncDemoVault() {
   await mkdir(demoPluginDir, { recursive: true })
 
@@ -33,6 +60,7 @@ async function syncDemoVault() {
   ])
 
   console.log(`[dev-sync] Synced plugin files to ${demoPluginDir}`)
+  if (watch) await reloadObsidian()
 }
 
 async function requestSync() {

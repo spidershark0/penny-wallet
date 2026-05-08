@@ -46,15 +46,21 @@ jobs:
             exit 1
           fi
 
-      - name: Create GitHub Pre-release
+      - name: Create or Update GitHub Pre-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${{ github.ref_name }}
-          gh release create "$TAG" \
-            --title "$TAG (Beta)" \
-            --generate-notes \
-            --prerelease
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists. Updating assets..."
+          else
+            echo "Creating new pre-release $TAG..."
+            gh release create "$TAG" \
+              --title "$TAG (Beta)" \
+              --generate-notes \
+              --prerelease
+          fi
 
           gh release upload "$TAG" \
             main.js \

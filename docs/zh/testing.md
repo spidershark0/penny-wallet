@@ -136,7 +136,8 @@ Object.defineProperty(global, 'window', {
 | 函式 | 測試項目 |
 |------|---------|
 | `parseRow` | 有效列 → 正確的 Transaction 物件 |
-| `parseRow` | `payment` 類型 → 正規化為 `repayment`（向後相容） |
+| `parseRow` | 舊版 `payment` / `repayment` 類型 → 正規化為 `transfer` + `credit_card_payment` |
+| `parseRow` | 負數金額 → 解析為退款支出 |
 | `parseRow` | `-` 欄位 → 結果中為 `undefined` |
 | `parseRow` | 少於 8 欄 → `null` |
 | `parseRow` | 非數字金額 → `null` |
@@ -159,9 +160,10 @@ Object.defineProperty(global, 'window', {
 |------|---------|
 | 銀行支出 → 餘額減少 | `initialBalance - amount` |
 | 信用卡支出 → 欠款增加 | `initialBalance + amount` |
+| 信用卡負支出 → 欠款減少 | `initialBalance - amount` |
 | 銀行收入 → 餘額增加 | `initialBalance + amount` |
-| 轉帳 → 來源減少，目標增加 | 兩者都正確 |
-| 還款 → 銀行減少，信用卡欠款減少 | 兩者都正確 |
+| 移轉 → 來源減少，目標增加 | 兩者都正確 |
+| `credit_card_payment` 移轉 → 銀行減少，信用卡欠款減少 | 兩者都正確 |
 | 設定中不存在的帳戶 → 靜默忽略 | 不崩潰 |
 | 帳戶排序 → 始終依現金 → 銀行 → 信用卡 | 排序驗證 |
 
@@ -180,7 +182,8 @@ Object.defineProperty(global, 'window', {
 |------|------|
 | 只有支出 | `income: 0, expense: Σ` |
 | 只有收入 | `income: Σ, expense: 0` |
-| 轉帳/還款排除 | 不計入任一項 |
+| 移轉排除 | 不計入任一項 |
+| 負支出退款 | 降低支出總額 |
 | `netAsset` 始終為 0 | （frontmatter 快取專用） |
 
 `groupByCategory`
@@ -305,6 +308,8 @@ export function createMockApp(initialFiles: Record<string, string> = {}) {
 | Finance Overview — pie charts | 圓餅圖渲染、圖例項目 |
 | Add Transaction modal | Modal 開啟、type tabs 存在 |
 | Add expense transaction | 完整表單提交：選擇帳戶、填金額、modal 關閉 |
+| Add refund transaction | 退款切換會儲存負支出 |
+| Mobile tag picker | Bottom sheet 開啟、搜尋/新增標籤流程正常 |
 | Assets view | View 開啟、區間選擇器與圖表渲染 |
 | Transactions (Detail) view | View 開啟、篩選 pills、rows 渲染、支出篩選 |
 | Edit transaction | 編輯 modal 開啟、預填資料、送出後關閉、row 數不變 |

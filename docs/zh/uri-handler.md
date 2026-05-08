@@ -64,8 +64,9 @@ obsidian://penny-wallet?參數1=值1&參數2=值2
 |-----|------|------|
 | `account_transfer` | 帳戶互轉 | Account Transfer |
 | `credit_card_payment` | 信用卡繳費 | Credit Card Payment |
-| `credit_card_refund` | 信用卡刷退 | Credit Card Refund |
 | `investment_trade` | 投資買賣 | Investment Trade |
+
+信用卡退款是在表單中以支出退款記錄，不是移轉分類。
 
 ---
 
@@ -98,7 +99,7 @@ obsidian://penny-wallet?type=expense&amount=280&category=food&note=午餐
 
 **支援多個 vault 嗎？**
 
-不支援。PennyWallet 無法透過 URI 指定目標 vault，URI 一律在當前使用中的 vault 開啟。
+支援。在 URL 加上 `vault=<vault-name>` 參數即可指定目標 vault，這是 Obsidian 原生 URI scheme 的功能。Desktop 會路由到對應的 vault 視窗；mobile 若目前不是該 vault 則會先切換過去。
 
 **帳戶與分類名稱需要完全相符嗎？**
 

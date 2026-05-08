@@ -64,17 +64,36 @@ describe('computeWalletBalances', () => {
     expect(card.balance).toBe(0)      // 0 + 500 - 500
   })
 
-  it('credit_card_refund: creditCard debt decreases, no other wallet affected', () => {
-    const wf = makeWalletFile([BANK, CARD])
+  it('negative expense on creditCard reduces debt', () => {
+    const wf = makeWalletFile([CARD])
     const txs: Transaction[] = [
       { date: '04/01', type: 'expense', wallet: 'Card', category: 'shopping', note: '', amount: 300 },
-      { date: '04/02', type: 'transfer', category: 'credit_card_refund', fromWallet: 'Card', toWallet: 'Card', note: '', amount: 100 },
+      { date: '04/02', type: 'expense', wallet: 'Card', category: 'shopping', note: '退款', amount: -100 },
     ]
     const result = wf.computeWalletBalances(txs)
-    const bank = result.find(r => r.wallet.name === 'Bank')!
+    expect(result[0].balance).toBe(200) // 0 + 300 - 100
+  })
+
+  it('negative expense on bank restores balance', () => {
+    const wf = makeWalletFile([BANK])
+    const txs: Transaction[] = [
+      { date: '04/01', type: 'expense', wallet: 'Bank', category: 'shopping', note: '', amount: 500 },
+      { date: '04/02', type: 'expense', wallet: 'Bank', category: 'shopping', note: '退款', amount: -200 },
+    ]
+    const result = wf.computeWalletBalances(txs)
+    expect(result[0].balance).toBe(4700) // 5000 - 500 + 200
+  })
+
+  it('transfer credit_card_refund no longer has special case (treated as normal transfer)', () => {
+    const wf = makeWalletFile([BANK, CARD])
+    // Old-style record still parsed, now processed as regular transfer (from-, to+)
+    const txs: Transaction[] = [
+      { date: '04/01', type: 'transfer', category: 'credit_card_refund', fromWallet: 'Card', toWallet: 'Card', note: '', amount: 100 },
+    ]
+    const result = wf.computeWalletBalances(txs)
     const card = result.find(r => r.wallet.name === 'Card')!
-    expect(bank.balance).toBe(5000)   // unaffected
-    expect(card.balance).toBe(200)    // 300 - 100
+    // from=Card: balance -= 100; to=Card: balance += 100 → net 0
+    expect(card.balance).toBe(0)
   })
 
   it('unknown wallet in transaction is silently ignored', () => {
@@ -181,6 +200,15 @@ describe('computeSummary', () => {
     const wf = makeWalletFile([])
     const { netAsset } = wf.computeSummary([])
     expect(netAsset).toBe(0)
+  })
+
+  it('negative expense (refund) reduces monthly expense total', () => {
+    const wf = makeWalletFile([BANK])
+    const txs: Transaction[] = [
+      { date: '04/01', type: 'expense', wallet: 'Bank', category: 'food', note: '', amount: 300 },
+      { date: '04/02', type: 'expense', wallet: 'Bank', category: 'food', note: '退款', amount: -100 },
+    ]
+    expect(wf.computeSummary(txs)).toEqual({ income: 0, expense: 200, netAsset: 0 })
   })
 })
 

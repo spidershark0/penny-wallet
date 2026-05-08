@@ -1,13 +1,13 @@
 # PennyWallet
 
-A personal finance tracker plugin for [Obsidian](https://obsidian.md). Log expenses, income, transfers, and credit card repayments — all stored as plain Markdown tables in your vault.
+A personal finance tracker plugin for [Obsidian](https://obsidian.md). Log expenses, income, transfers, credit card payments, and refunds — all stored as plain Markdown tables in your vault.
 
 **Documentation:** [English](https://twrusstw.github.io/penny-wallet/) · [繁體中文](https://twrusstw.github.io/penny-wallet/zh/)
 
 ## Features
 
 - **Finance Overview** — monthly income / expense summary, 6-month income/expense chart, and category pie charts
-- **Transactions** — multi-select type filter, category checklist, keyword search, inline edit and delete, with sticky subtotals
+- **Transactions** — multi-select type filter, category checklist, keyword search, hover actions, inline edit and delete, with sticky subtotals
 - **Assets** — 3 / 6 / 12-month range selector, account balances, net asset trend, savings rate, and asset allocation pie
 - **Multiple account types** — cash, bank account, credit card (with debt tracking)
 - **Custom categories** — add your own expense and income categories
@@ -24,7 +24,7 @@ A personal finance tracker plugin for [Obsidian](https://obsidian.md). Log expen
 
 ### Community Plugin Store
 
-Search **PennyWallet** in **Settings → Community Plugins → Browse**.
+PennyWallet is not yet listed in the Community Plugin Store.
 
 ## Getting Started
 
@@ -38,10 +38,9 @@ Search **PennyWallet** in **Settings → Community Plugins → Browse**.
 |------|-------------|
 | **Expense** | Money out from cash / bank / credit card |
 | **Income** | Money received into an account |
-| **Transfer** | Move money between two accounts |
-| **Repayment** | Pay off a credit card balance from a bank / cash account |
+| **Transfer** | Move money between accounts, including credit card payments |
 
-Credit card accounts track outstanding debt. Expenses increase the debt; repayments reduce it. Net asset calculation automatically subtracts credit card debt.
+Credit card accounts track outstanding debt. Expenses increase the debt; credit card payment transfers reduce it. Refunds are stored as negative expenses and shown as positive expense reversals. Net asset calculation automatically subtracts credit card debt.
 
 ## Views
 
@@ -53,7 +52,7 @@ Monthly summary with income, expense, and balance metrics, plus a 6-month income
 
 ### Transactions
 
-Full transaction list with multi-select type filter, category checklist dropdown, keyword search, inline edit and delete. Header and subtotals stay fixed while the list scrolls.
+Full transaction list with multi-select type filter, category checklist dropdown, keyword search, hover actions, inline edit and delete. Header and subtotals stay fixed while the list scrolls.
 
 ![Transactions](images/transactions-view.png)
 
@@ -70,6 +69,8 @@ Add, edit, or archive accounts. Manage custom expense and income categories.
 ![Settings](images/settings-accounts.png)
 
 ## Transaction Modal
+
+The transaction form supports refund entries, required-field markers, edit-mode date context, and tag chips. On mobile, tags open in a bottom-sheet multi-select picker with search and inline new-tag creation.
 
 ![Transaction Modal](images/transaction-modal.png)
 

@@ -64,8 +64,9 @@ obsidian://penny-wallet?param1=value1&param2=value2
 |-----|---------|---------|
 | `account_transfer` | Account Transfer | 帳戶互轉 |
 | `credit_card_payment` | Credit Card Payment | 信用卡繳費 |
-| `credit_card_refund` | Credit Card Refund | 信用卡刷退 |
 | `investment_trade` | Investment Trade | 投資買賣 |
+
+Credit card refunds are recorded as expense refunds in the form, not as transfer categories.
 
 ---
 
@@ -98,7 +99,7 @@ To add it to the home screen: tap **⋯** → **Add to Home Screen**.
 
 **Can I use this with multiple vaults?**
 
-No. PennyWallet does not support targeting a specific vault via URI. The URI always opens in whichever vault is currently active.
+Yes. Add `vault=<vault-name>` to the URL to target a specific vault — this is a native Obsidian URI feature. On desktop it routes to the matching vault window; on mobile it switches to that vault first if it isn't already active.
 
 **Do account and category names need to match exactly?**
 

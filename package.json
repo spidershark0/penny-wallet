@@ -1,6 +1,6 @@
 {
   "name": "penny-wallet",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Personal finance tracker Obsidian plugin",
   "main": "main.js",
   "scripts": {
@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "node scripts/test-ui.mjs"
+    "test:ui": "node scripts/test-ui.mjs",
+    "test:ui:mobile": "node scripts/test-ui-mobile.mjs"
   },
   "keywords": [],
   "author": "twrusstw",
@@ -40,6 +41,8 @@
     "vitest": "^4.1.2"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "sortablejs": "^1.15.7"
   }
 }

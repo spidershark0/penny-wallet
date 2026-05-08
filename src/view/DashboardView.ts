@@ -3,20 +3,25 @@ import { WalletFile } from '../io/WalletFile'
 import { TransactionModal } from '../modal/TransactionModal'
 import { MobileTransactionModal } from '../modal/MobileTransactionModal'
 import { t, formatMonthLabel, formatYearMonth } from '../i18n'
-import { currentYearMonth, stepMonth, isAfterCurrentMonth, createMetric } from '../utils'
+import { currentYearMonth, stepMonth, isAfterCurrentMonth } from '../utils'
+import { createMetric, renderCard } from './components'
 import { TransactionType } from '../types'
 import { DETAIL_VIEW_TYPE } from './DetailView'
 import { ASSET_VIEW_TYPE } from './AssetView'
-import { MonthData, drawIncExpChart, drawPie, addRectLegend, getMonthRangeEndingAt } from './charts'
+import { Chart } from 'chart.js'
+import { MonthData, drawIncExpChart, drawPie, getMonthRangeEndingAt } from './charts'
 
 export const DASHBOARD_VIEW_TYPE = 'penny-wallet-dashboard'
-
-const C_INCOME  = '#1D9E75'
-const C_EXPENSE = '#D85A30'
 
 export class DashboardView extends ItemView {
   private walletFile: WalletFile
   private currentYearMonth: string
+  private charts: Chart[] = []
+
+  private clearCharts() {
+    this.charts.forEach(c => c.destroy())
+    this.charts = []
+  }
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -32,16 +37,21 @@ export class DashboardView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
+    this.registerEvent(
+      (this.app.workspace as Events).on('css-change', () => { void this.render() })
+    )
     await this.render()
   }
 
   onClose(): Promise<void> {
+    this.clearCharts()
     this.contentEl.empty()
     return Promise.resolve()
   }
 
   async render() {
     const { contentEl } = this
+    this.clearCharts()
     contentEl.empty()
     contentEl.addClass('pw-dashboard')
 
@@ -105,9 +115,12 @@ export class DashboardView extends ItemView {
     const monthBalance = monthIncome - monthExpense
 
     const metricsEl = contentEl.createDiv('pw-metrics')
-    createMetric(metricsEl, t('dash.income'),  monthIncome,   'income',   dp)
-    createMetric(metricsEl, t('dash.expense'), monthExpense,  'expense',  dp)
-    createMetric(metricsEl, t('dash.balance'), monthBalance,  monthBalance >= 0 ? 'positive' : 'negative', dp)
+    createMetric(metricsEl, t('dash.income'),  monthIncome,  'income',  { dp })
+    createMetric(metricsEl, t('dash.expense'), monthExpense, 'expense', { dp })
+    createMetric(metricsEl, t('dash.balance'), monthBalance,
+      monthBalance >= 0 ? 'positive' : 'negative',
+      { dp, hero: true },
+    )
 
     // ── 6-month bar chart ────────────────────────────────────────────────────
     const data: MonthData[] = months.map(ym => ({
@@ -121,15 +134,12 @@ export class DashboardView extends ItemView {
     // ── 2-column grid: bar chart left, pie charts right ─────────────────────
     const grid2 = contentEl.createDiv('pw-grid-2')
 
-    const incExpCard = grid2.createDiv('pw-card pw-inc-exp-card')
-    incExpCard.createEl('div', { text: t('trend.monthlyIncomeExpense'), cls: 'pw-card-title' })
-    const legRow = incExpCard.createDiv('pw-leg-row')
-    addRectLegend(legRow, C_INCOME, t('dash.income'))
-    addRectLegend(legRow, C_EXPENSE, t('dash.expense'))
+    const incExpCard = renderCard(grid2, {
+      title: t('trend.monthlyIncomeExpense'),
+      className: 'pw-inc-exp-card',
+    })
     const incExpChartWrap = incExpCard.createDiv('pw-chart-wrap')
-    const incExpTooltip = incExpChartWrap.createDiv('pw-tooltip')
-    incExpTooltip.hide()
-    requestAnimationFrame(() => drawIncExpChart(incExpChartWrap, incExpTooltip, data, dp))
+    this.charts.push(drawIncExpChart(incExpChartWrap, data, dp))
 
     // ── Category pies ────────────────────────────────────────────────────────
     const gridRight = grid2.createDiv('pw-grid-right')
@@ -137,14 +147,12 @@ export class DashboardView extends ItemView {
     const expenseMap = this.walletFile.groupByCategory(transactions, 'expense')
     const incomeMap  = this.walletFile.groupByCategory(transactions, 'income')
 
-    const expCard = gridRight.createDiv('pw-card')
-    expCard.createEl('div', { text: t('dash.expenseByCategory'), cls: 'pw-card-title' })
-    if (expenseMap.size > 0) drawPie(expCard, expenseMap, dp, (cat) => { void this.openDetailWithFilter('expense', cat) }, 160)
+    const expCard = renderCard(gridRight, { title: t('dash.expenseByCategory') })
+    if (expenseMap.size > 0) this.charts.push(drawPie(expCard, expenseMap, dp, (cat) => { void this.openDetailWithFilter('expense', cat) }, 200))
     else expCard.createEl('p', { text: t('dash.noData'), cls: 'pw-no-data' })
 
-    const incCard = gridRight.createDiv('pw-card')
-    incCard.createEl('div', { text: t('dash.incomeByCategory'), cls: 'pw-card-title' })
-    if (incomeMap.size > 0) drawPie(incCard, incomeMap, dp, (cat) => { void this.openDetailWithFilter('income', cat) }, 160)
+    const incCard = renderCard(gridRight, { title: t('dash.incomeByCategory') })
+    if (incomeMap.size > 0) this.charts.push(drawPie(incCard, incomeMap, dp, (cat) => { void this.openDetailWithFilter('income', cat) }, 200))
     else incCard.createEl('p', { text: t('dash.noData'), cls: 'pw-no-data' })
   }
 

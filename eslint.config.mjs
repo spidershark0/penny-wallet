@@ -9,6 +9,12 @@ export default defineConfig([
   },
   ...obsidianmd.configs.recommended,
   {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+  },
+  {
     files: ['src/**/*.ts'],
     languageOptions: {
       parser: tsparser,

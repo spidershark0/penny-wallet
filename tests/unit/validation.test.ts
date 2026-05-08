@@ -110,6 +110,11 @@ describe('repairOrphanedWallet', () => {
         getFileByPath: (p: string) => files.has(p) ? { path: p } : null,
         read: async (f: { path: string }) => files.get(f.path) ?? '',
         modify: async (f: { path: string }, content: string) => { files.set(f.path, content) },
+        process: async (f: { path: string }, fn: (data: string) => string) => {
+          const content = fn(files.get(f.path) ?? '')
+          files.set(f.path, content)
+          return content
+        },
         create: async (p: string, content: string) => { files.set(p, content) },
         adapter: {
           exists: async (p: string) => files.has(p),

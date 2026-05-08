@@ -23,6 +23,7 @@ export class DetailView extends ItemView {
   private listEl: HTMLElement | null = null
   private listWrapEl: HTMLElement | null = null
   private subtotalEl: HTMLElement | null = null
+  private _revealCleanup: (() => void) | null = null
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -46,6 +47,7 @@ export class DetailView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
+    this.register(() => { this._revealCleanup?.() })
     await this.render()
   }
 
@@ -289,6 +291,7 @@ export class DetailView extends ItemView {
       return true
     })
 
+    this._revealCleanup?.()
     this.listEl.empty()
     if (filtered.length === 0) {
       this.listEl.createEl('p', { text: t('detail.noTransactions'), cls: 'pw-no-data' })
@@ -325,29 +328,67 @@ export class DetailView extends ItemView {
     })
 
     const main = row.createDiv('pw-tx-main')
+
+    // Line 1: category + wallet
     const top = main.createDiv('pw-tx-top')
     const catText = translateCategory(tx.category ?? '')
     top.createEl('span', { text: catText, cls: 'pw-tx-cat' })
-    if (tx.tags?.length) {
-      const tagsEl = top.createSpan('pw-tx-tags')
-      for (const tag of tx.tags) {
-        tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
-      }
-    }
-    if (tx.note) top.createEl('span', { text: tx.note, cls: 'pw-tx-note' })
     const walletText = tx.wallet ?? (tx.fromWallet && tx.toWallet ? `${tx.fromWallet} → ${tx.toWallet}` : '—')
-    main.createDiv({ text: walletText, cls: 'pw-tx-wallet' })
+    top.createEl('span', { text: walletText, cls: 'pw-tx-wallet' })
 
-    const amountCls = tx.type === 'income' ? 'pw-tx-amount is-income'
+    // Line 2: tags + note (only rendered if data exists)
+    if (tx.tags?.length || tx.note) {
+      const bottom = main.createDiv('pw-tx-bottom')
+      if (tx.tags?.length) {
+        const tagsEl = bottom.createSpan('pw-tx-tags')
+        for (const tag of tx.tags) {
+          tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
+        }
+      }
+      if (tx.note) bottom.createEl('span', { text: tx.note, cls: 'pw-tx-note' })
+    }
+
+    const isRefund = tx.type === 'expense' && tx.amount < 0
+    const amountCls = isRefund ? 'pw-tx-amount is-refund'
+      : tx.type === 'income' ? 'pw-tx-amount is-income'
       : tx.type === 'expense' ? 'pw-tx-amount is-expense'
       : 'pw-tx-amount'
-    const amountPrefix = tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''
+    const amountPrefix = isRefund ? '+' : tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''
+    const displayAmount = isRefund ? -tx.amount : tx.amount
     row.createEl('span', {
-      text: amountPrefix + formatAmount(tx.amount, dp),
+      text: amountPrefix + formatAmount(displayAmount, dp),
       cls: amountCls,
     })
 
     const actions = row.createDiv('pw-tx-actions')
+
+    if (Platform.isMobile) {
+      let timer: ReturnType<typeof setTimeout> | null = null
+      row.addEventListener('touchstart', () => {
+        timer = setTimeout(() => {
+          this._revealCleanup?.()
+          row.addClass('is-revealed')
+          const onOutside = (ev: TouchEvent) => {
+            if (!row.contains(ev.target as Node)) {
+              row.removeClass('is-revealed')
+              document.removeEventListener('touchstart', onOutside)
+              this._revealCleanup = null
+            }
+          }
+          document.addEventListener('touchstart', onOutside)
+          this._revealCleanup = () => {
+            document.removeEventListener('touchstart', onOutside)
+            this._revealCleanup = null
+          }
+        }, 500)
+      }, { passive: true })
+      row.addEventListener('touchmove', () => {
+        if (timer) { clearTimeout(timer); timer = null }
+      }, { passive: true })
+      row.addEventListener('touchend', () => {
+        if (timer) { clearTimeout(timer); timer = null }
+      })
+    }
 
     const editBtn = actions.createEl('button', { cls: 'pw-txn-btn' })
     editBtn.setAttribute('aria-label', t('ui.edit'))

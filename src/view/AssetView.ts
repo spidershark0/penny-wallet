@@ -6,13 +6,21 @@ import { t, formatMonthLabel, formatYearMonth } from '../i18n'
 import { formatAmount } from '../utils'
 import { DETAIL_VIEW_TYPE } from './DetailView'
 import { DASHBOARD_VIEW_TYPE } from './DashboardView'
+import { Chart } from 'chart.js'
 import { MonthData, drawNetChart, drawPie, getMonthRange } from './charts'
+import { renderCard } from './components'
 
 export const ASSET_VIEW_TYPE = 'penny-wallet-asset'
 
 export class AssetView extends ItemView {
   private walletFile: WalletFile
   private range: number = 6
+  private charts: Chart[] = []
+
+  private clearCharts() {
+    this.charts.forEach(c => c.destroy())
+    this.charts = []
+  }
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -27,16 +35,21 @@ export class AssetView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
+    this.registerEvent(
+      (this.app.workspace as Events).on('css-change', () => { void this.render() })
+    )
     await this.render()
   }
 
   onClose(): Promise<void> {
+    this.clearCharts()
     this.contentEl.empty()
     return Promise.resolve()
   }
 
   async render() {
     const { contentEl } = this
+    this.clearCharts()
     const savedScroll = contentEl.scrollTop
     contentEl.empty()
     contentEl.addClass('pw-asset')
@@ -78,8 +91,7 @@ export class AssetView extends ItemView {
     const leftCol = grid.createDiv('pw-asset-left')
 
     // Wallet balances card
-    const walletCard = leftCol.createDiv('pw-card')
-    walletCard.createEl('div', { text: t('dash.walletBalances'), cls: 'pw-card-title' })
+    const walletCard = renderCard(leftCol, { title: t('dash.walletBalances') })
     const walletList = walletCard.createDiv('pw-wallet-list')
 
     for (const { wallet, balance } of walletBalances) {
@@ -114,16 +126,15 @@ export class AssetView extends ItemView {
       if (balance > 0) assetMap.set(wallet.name, balance)
     }
     if (assetMap.size >= 2) {
-      const assetCard = leftCol.createDiv('pw-card')
-      assetCard.createEl('div', { text: t('dash.assetAllocation'), cls: 'pw-card-title' })
-      drawPie(assetCard, assetMap, dp)
+      const assetCard = renderCard(leftCol, { title: t('dash.assetAllocation') })
+      this.charts.push(drawPie(assetCard, assetMap, dp))
     }
 
     // ── Right column ─────────────────────────────────────────────────────────
     const rightCol = grid.createDiv('pw-asset-right')
 
     // Net asset trend card (with range picker inside)
-    const netCard = rightCol.createDiv('pw-card')
+    const netCard = renderCard(rightCol)  // no title — header row holds it
     const netCardHeader = netCard.createDiv('pw-card-header-row')
     netCardHeader.createEl('div', { text: t('asset.netAssetTrend'), cls: 'pw-card-title' })
     const rangeRow = netCardHeader.createDiv('pw-range-row')
@@ -146,13 +157,8 @@ export class AssetView extends ItemView {
     }))
 
     const netChartWrap = netCard.createDiv('pw-chart-wrap')
-    const netTooltip = netChartWrap.createDiv('pw-tooltip')
-    netTooltip.hide()
-
-    requestAnimationFrame(() => {
-      drawNetChart(netChartWrap, netTooltip, data, dp)
-      contentEl.scrollTop = savedScroll
-    })
+    this.charts.push(drawNetChart(netChartWrap, data, dp))
+    contentEl.scrollTop = savedScroll
   }
 
   private async openOrRevealView(type: string, options?: { state?: Record<string, unknown> }) {

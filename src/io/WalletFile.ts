@@ -216,7 +216,7 @@ export class WalletFile {
     const file = this.app.vault.getFileByPath(path)
 
     if (!file) {
-      // Vault index may be stale at startup — check the filesystem directly
+      // Root dotfiles may be omitted from Obsidian's vault index; adapter access keeps existing configs readable.
       const existsOnDisk = await this.app.vault.adapter.exists(path)
       if (existsOnDisk) {
         try {
@@ -294,19 +294,32 @@ export class WalletFile {
     this.config = { ...this.config, tags: [...existing].sort() }
   }
 
+  async addTag(name: string): Promise<{ ok: true } | { ok: false, reason: 'empty' | 'duplicate' }> {
+    const trimmed = name.trim().replace(/^#/, '').trim()
+    if (!trimmed) return { ok: false, reason: 'empty' }
+    if (this.config.tags.includes(trimmed)) return { ok: false, reason: 'duplicate' }
+    this.config = { ...this.config, tags: [...this.config.tags, trimmed].sort() }
+    await this.saveConfig()
+    return { ok: true }
+  }
+
   async saveConfig(): Promise<void> {
     const path = ROOT_CONFIG_PATH
     const content = JSON.stringify(this.config, null, 2)
     const file = this.app.vault.getFileByPath(path)
     if (file) {
-      await this.app.vault.modify(file, content)
+      await this.app.vault.process(file, () => content)
     } else {
       try {
         await this.app.vault.create(path, content)
       } catch (e: unknown) {
         if (!(e instanceof Error) || !e.message?.includes('already exists')) throw e
-        // Vault index is stale; write directly via adapter
-        await this.app.vault.adapter.write(path, content)
+        const retryFile = this.app.vault.getFileByPath(path)
+        if (retryFile) {
+          await this.app.vault.process(retryFile, () => content)
+        } else {
+          await this.app.vault.adapter.write(path, content)
+        }
       }
     }
   }
@@ -353,7 +366,7 @@ export class WalletFile {
     const path = this.monthFilePath(yearMonth)
     const file = this.app.vault.getFileByPath(path)
     if (file) {
-      await this.app.vault.modify(file, content)
+      await this.app.vault.process(file, () => content)
     } else {
       try {
         await this.app.vault.create(path, content)
@@ -365,7 +378,7 @@ export class WalletFile {
         // File was created by another process; try to modify it
         const retryFile = this.app.vault.getFileByPath(path)
         if (retryFile) {
-          await this.app.vault.modify(retryFile, content)
+          await this.app.vault.process(retryFile, () => content)
         }
       }
     }
@@ -784,18 +797,12 @@ export class WalletFile {
         }
         break
       case 'transfer':
-        if (tx.category === 'credit_card_refund' && tx.fromWallet === tx.toWallet) {
-          // Credit card refund: fromWallet == toWallet == credit card; debt decreases once
-          if (tx.toWallet && map.has(tx.toWallet))
-            map.set(tx.toWallet, (map.get(tx.toWallet) ?? 0) - tx.amount)
-        } else if (tx.category === 'credit_card_payment') {
-          // Credit card payment: from (bank) decreases, to (credit card) debt decreases
+        if (tx.category === 'credit_card_payment') {
           if (tx.fromWallet && map.has(tx.fromWallet))
             map.set(tx.fromWallet, (map.get(tx.fromWallet) ?? 0) - tx.amount)
           if (tx.toWallet && map.has(tx.toWallet))
             map.set(tx.toWallet, (map.get(tx.toWallet) ?? 0) - tx.amount)
         } else {
-          // Normal transfer: from decreases, to increases
           if (tx.fromWallet && map.has(tx.fromWallet))
             map.set(tx.fromWallet, (map.get(tx.fromWallet) ?? 0) - tx.amount)
           if (tx.toWallet && map.has(tx.toWallet))

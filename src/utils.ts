@@ -17,16 +17,6 @@ export function formatAmount(n: number, dp: 0 | 2 = 0): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp })
 }
 
-export function createMetric(container: HTMLElement, label: string, value: number, cls: string, dp: 0 | 2 = 0) {
-  const card = container.createDiv('pw-metric')
-  card.createEl('div', { text: label, cls: 'pw-metric-label' })
-  const prefix = cls === 'income' || cls === 'positive' ? '+' : cls === 'expense' || cls === 'negative' ? '-' : ''
-  card.createEl('div', {
-    text: prefix + formatAmount(Math.abs(value), dp),
-    cls: `pw-metric-value ${cls}`,
-  })
-}
-
 // CJK Unified Ideographs (Traditional/Simplified Chinese)
 const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/
 
@@ -36,4 +26,24 @@ export function validateTag(tag: string): boolean {
   const hasCjk = CJK_RE.test(tag)
   const len = [...tag].length
   return hasCjk ? len <= 5 : len <= 10
+}
+
+export function formatHeroAmount(raw: string): string {
+  if (!raw) return '0'
+  const dotIdx = raw.indexOf('.')
+  const intPart = dotIdx === -1 ? raw : raw.slice(0, dotIdx)
+  const decPart = dotIdx === -1 ? null : raw.slice(dotIdx + 1)
+
+  const intNum = intPart === '' ? 0 : Number(intPart)
+  const intStr = Number.isFinite(intNum)
+    ? intNum.toLocaleString('en-US')
+    : intPart
+
+  if (dotIdx === -1) return intStr
+  return `${intStr}.${decPart}`
+}
+
+export function formatMobileHeroAmount(raw: string, isRefund: boolean): string {
+  const amount = `$${formatHeroAmount(raw)}`
+  return isRefund && raw !== '' ? `+ ${amount}` : amount
 }

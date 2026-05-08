@@ -1,18 +1,27 @@
-CLAUDE.md
-AGENTS.md
-node_modules/
-docs/.vitepress/dist
-docs/.vitepress/cache
+# local
 *.local
 .DS_Store
+.vscode/
+
+# agent
+CLAUDE.md
+AGENTS.md
 .claude/
 .claude_doc/
-graphify-out/**
-.vscode/
+.codex/
+
+# project build/test
+node_modules/
 coverage/
 main.js
+
+# docs build
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/.vitepress/.temp/
+
 # Ignore generated demo-vault data; keep only the checked-in plugin list.
 demo-vault/*
 !demo-vault/.obsidian/
 demo-vault/.obsidian/*
-!demo-vault/.obsidian/community-plugins.json.worktrees/
+!demo-vault/.obsidian/community-plugins.json

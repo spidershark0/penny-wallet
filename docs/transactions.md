@@ -20,15 +20,19 @@ Money leaving one of your accounts for a purchase or payment.
 **Effect on balance:**
 - Cash / Bank account → balance decreases
 - Credit Card → outstanding debt increases
+- Refund toggle → amount is stored as a negative expense; credit card debt or cash/bank spending is reduced
 
 **Example:** Paid NT$280 for lunch with cash
 → Account: `Cash`, Category: `Food`, Amount: `280`
+
+**Example:** Returned a NT$320 purchase on Visa Platinum
+→ Account: `Visa Platinum`, Category: `Shopping`, Amount: `320`, Refund enabled
 
 ---
 
 ### Income
 
-Money arriving into one of your accounts.
+Money arriving into one of your cash or bank accounts. Credit card accounts are excluded from the income account selector.
 
 | Field | Required | Notes |
 |-------|----------|-------|
@@ -47,7 +51,7 @@ Money arriving into one of your accounts.
 
 ### Transfer
 
-Moving money between two of your own accounts — including credit card payments, refunds, and investment trades.
+Moving money between two of your own accounts — including credit card payments and investment trades.
 
 | Field | Required | Notes |
 |-------|----------|-------|
@@ -63,13 +67,11 @@ Moving money between two of your own accounts — including credit card payments
 |----------|-------------|------------|
 | Account Transfer | Any non-credit-card | Any non-credit-card |
 | Credit Card Payment | Cash or Bank | Credit Card |
-| Credit Card Refund | Credit Card | Same Credit Card |
 | Investment Trade | Any | Any |
 
 **Effect on balance:**
 - Account Transfer / Investment Trade: From decreases, To increases
 - Credit Card Payment: From (bank) decreases, To (credit card) debt decreases
-- Credit Card Refund: Credit card debt decreases (refund reversal)
 
 **Example:** Withdraw NT$8,000 cash from ATM
 → Category: `Account Transfer`, From: `HSBC Savings`, To: `Cash`, Amount: `8000`
@@ -110,7 +112,9 @@ Editing supports changing the **date** (including moving the transaction to a di
 `Salary` · `Interest` · `Side Income` · `Bonus` · `Lottery` · `Rent` · `Cashback` · `Dividend` · `Investment Profit` · `Insurance Claim` · `Pension`
 
 ### Transfer
-`Account Transfer` · `Credit Card Payment` · `Credit Card Refund` · `Investment Trade`
+`Account Transfer` · `Credit Card Payment` · `Investment Trade`
+
+Refunds are no longer a transfer category. Use **Expense** with the refund toggle instead.
 
 If a transaction has no category, it is shown as **Uncategorized**. This is a display-only label — nothing is stored.
 
