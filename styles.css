@@ -1363,6 +1363,7 @@ body.pw-bottom-sheet-lock {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: 12px;
   margin-bottom: 8px;
 }
 
