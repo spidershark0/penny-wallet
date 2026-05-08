@@ -1,11 +1,8 @@
-import { Events, ItemView, Platform, WorkspaceLeaf } from 'obsidian'
+import { Events, ItemView, WorkspaceLeaf } from 'obsidian'
 import { WalletFile } from '../io/WalletFile'
-import { TransactionModal } from '../modal/TransactionModal'
-import { MobileTransactionModal } from '../modal/MobileTransactionModal'
 import { t, formatMonthLabel, formatYearMonth } from '../i18n'
 import { formatAmount } from '../utils'
-import { DETAIL_VIEW_TYPE } from './DetailView'
-import { DASHBOARD_VIEW_TYPE } from './DashboardView'
+import { renderSharedHeader } from './SharedHeader'
 import { Chart } from 'chart.js'
 import { MonthData, drawNetChart, drawPie, getMonthRange } from './charts'
 import { renderCard } from './components'
@@ -65,23 +62,11 @@ export class AssetView extends ItemView {
     const netAsset = this.walletFile.computeNetAsset(walletBalances)
     const dp = this.walletFile.getConfig().decimalPlaces ?? 0
 
-    // ── Header ──────────────────────────────────────────────────────────────
-    const header = contentEl.createDiv('pw-nav-row')
-
-    const headerActions = header.createDiv('pw-nav-right')
-    const overviewBtn = headerActions.createEl('button', { text: t('ui.overview'),              cls: 'pw-action-btn' })
-    const detailBtn   = headerActions.createEl('button', { text: t('ui.detail'),                cls: 'pw-action-btn' })
-    const addBtn      = headerActions.createEl('button', { text: '+ ' + t('ui.addTransaction'), cls: 'pw-action-btn' })
-
-    overviewBtn.addEventListener('click', () => void this.openOrRevealView(DASHBOARD_VIEW_TYPE))
-    detailBtn.addEventListener('click', () => void this.openOrRevealView(DETAIL_VIEW_TYPE))
-    addBtn.addEventListener('click', () => {
-      addBtn.disabled = true
-      const ModalClass = Platform.isMobile ? MobileTransactionModal : TransactionModal
-      new ModalClass(this.app, this.walletFile, {}, null, null,
-        () => (this.app.workspace as Events).trigger('penny-wallet:refresh'),
-        () => { addBtn.disabled = false },
-      ).open()
+    renderSharedHeader(contentEl, {
+      view: this,
+      walletFile: this.walletFile,
+      activeView: 'asset',
+      yearMonth: null,
     })
 
     // ── 2-column grid ────────────────────────────────────────────────────────
@@ -159,18 +144,5 @@ export class AssetView extends ItemView {
     const netChartWrap = netCard.createDiv('pw-chart-wrap')
     this.charts.push(drawNetChart(netChartWrap, data, dp))
     contentEl.scrollTop = savedScroll
-  }
-
-  private async openOrRevealView(type: string, options?: { state?: Record<string, unknown> }) {
-    const existing = this.app.workspace.getLeavesOfType(type)
-    const leaf = existing[0] ?? this.app.workspace.getLeaf('tab')
-
-    await leaf.setViewState({
-      type,
-      active: true,
-      state: options?.state,
-    })
-
-    void this.app.workspace.revealLeaf(leaf)
   }
 }
