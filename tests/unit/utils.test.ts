@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { stepMonth, isAfterCurrentMonth, formatAmount, validateTag, formatHeroAmount, formatMobileHeroAmount } from '../../src/utils'
-import { dateToYearMonth, dateToMonthDay } from '../../src/io/WalletFile'
+import { stepMonth, isAfterCurrentMonth, formatAmount, validateTag, formatHeroAmount, formatMobileHeroAmount, dateToYearMonth, dateToMonthDay } from '../../src/utils'
 
 // ── stepMonth ─────────────────────────────────────────────────────────────────
 

@@ -79,11 +79,13 @@ export function openTagPicker(params: TagPickerParams): () => void {
   sheet.createDiv('pw-bottom-sheet-handle')
   const bar = sheet.createDiv('pw-bottom-sheet-bar')
   const cancelBtn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn', text: t('ui.cancel') })
+  cancelBtn.dataset['testid'] = 'tag-picker-cancel'
   bar.createEl('span', { cls: 'pw-bottom-sheet-title', text: t('tagPicker.title') })
   const doneBtn = bar.createEl('button', {
     cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn--done',
     text: t('modal.done'),
   })
+  doneBtn.dataset['testid'] = 'tag-picker-done'
   cancelBtn.addEventListener('click', close)
   doneBtn.addEventListener('click', () => {
     onCommit([...staged])
@@ -96,6 +98,7 @@ export function openTagPicker(params: TagPickerParams): () => void {
     cls: 'pw-bottom-sheet-search',
     placeholder: t('tagPicker.search'),
   })
+  searchInput.dataset['testid'] = 'tag-picker-search'
 
   // Inline add button — sits directly below search (always above the
   // keyboard when it rises). Hidden when search is empty.
@@ -131,6 +134,8 @@ export function openTagPicker(params: TagPickerParams): () => void {
       const isSelected = staged.has(tag)
       const isDisabled = !isSelected && atLimit
       const chip = chipArea.createEl('button', { cls: 'pw-tag-picker-chip', text: `#${tag}` })
+      chip.dataset['testid'] = 'tag-picker-chip'
+      chip.dataset['tag'] = tag
       chip.toggleClass('is-selected', isSelected)
       chip.toggleClass('is-disabled', isDisabled)
 

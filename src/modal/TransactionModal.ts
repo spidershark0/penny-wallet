@@ -1,8 +1,10 @@
 import { App, Modal, Notice, setIcon } from 'obsidian'
 import { Transaction, TransactionType, TransactionModalParams, PennyWalletConfig } from '../types'
-import { WalletFile, dateToYearMonth } from '../io/WalletFile'
+import { WalletFile } from '../io/WalletFile'
+import { dateToYearMonth } from '../utils'
 import { t } from '../i18n'
-import { parseAmountForEdit, getCategoryOptions as getCategoryOptionsFromState, addTagToList, validateTransactionForm, buildTransactionPayload, getTransferWalletCandidates, type TransactionFormState } from './transactionState'
+import { parseAmountForEdit, getCategoryOptions as getCategoryOptionsFromState, validateTransactionForm, buildTransactionPayload, getTransferWalletCandidates, type TransactionFormState } from './transactionState'
+import { buildTagInput } from './TagInput'
 
 export class TransactionModal extends Modal {
   protected walletFile: WalletFile
@@ -241,9 +243,9 @@ export class TransactionModal extends Modal {
         ), true)
     }
 
-    this.addField(this.fieldsEl, t('modal.tags'), () => {
-      return this.buildTagInput(this.walletFile.getConfig().tags)
-    })
+    this.addField(this.fieldsEl, t('modal.tags'), () =>
+      buildTagInput(this.tags, this.walletFile.getConfig().tags, (next) => { this.tags = next })
+    )
 
     this.addField(this.fieldsEl, t('modal.note'), () => {
       const input = createEl('input', { type: 'text', placeholder: t('modal.note') })
@@ -342,92 +344,6 @@ export class TransactionModal extends Modal {
     sel.addEventListener('change', () => onChange(sel.value))
     this.attachPickerTouch(sel)
     return sel
-  }
-
-  private buildTagInput(availableTags: string[]): HTMLElement {
-    const wrapper = createDiv('pw-tag-input-wrapper')
-    const chipsEl = wrapper.createDiv('pw-tag-chips')
-    const input = wrapper.createEl('input', {
-      type: 'text',
-      cls: 'pw-tag-input',
-      placeholder: t('modal.tagsPlaceholder'),
-    })
-    input.setAttribute('enterkeyhint', 'done')
-    const dropdown = wrapper.createDiv('pw-tag-dropdown')
-    dropdown.hide()
-
-    const updateDropdown = () => {
-      const val = input.value.replace(/^#/, '').toLowerCase()
-      const suggestions = availableTags.filter(tag =>
-        !this.tags.includes(tag) && (val === '' || tag.toLowerCase().includes(val))
-      )
-      dropdown.empty()
-      if (suggestions.length === 0) { dropdown.hide(); return }
-      for (const tag of suggestions) {
-        const item = dropdown.createDiv({ cls: 'pw-tag-dropdown-item', text: tag })
-        item.addEventListener('mousedown', (e) => { e.preventDefault(); addTag(tag); updateDropdown() })
-      }
-      const rect = input.getBoundingClientRect()
-      dropdown.style.left = `${rect.left}px`
-      dropdown.style.top = `${rect.bottom + 2}px`
-      dropdown.style.width = `${rect.width}px`
-      dropdown.show()
-    }
-
-    const renderChips = () => {
-      chipsEl.empty()
-      for (const tag of this.tags) {
-        const chip = chipsEl.createSpan('pw-tag-chip')
-        chip.createSpan({ text: `#${tag}` })
-        const x = chip.createSpan({ text: '×', cls: 'pw-tag-chip-remove' })
-        x.addEventListener('click', () => {
-          this.tags = this.tags.filter(tg => tg !== tag)
-          renderChips()
-          if (this.tags.length < 3) input.removeAttribute('disabled')
-        })
-      }
-    }
-
-    const addTag = (value?: string) => {
-      const result = addTagToList(this.tags, value ?? input.value)
-      switch (result.kind) {
-        case 'empty':
-        case 'max':
-          return
-        case 'invalid':
-        case 'duplicate':
-          input.value = ''
-          dropdown.hide()
-          return
-        case 'added':
-          this.tags = result.next
-          input.value = ''
-          dropdown.hide()
-          renderChips()
-          if (this.tags.length >= 3) input.setAttribute('disabled', 'true')
-          return
-      }
-    }
-
-    input.addEventListener('input', updateDropdown)
-    input.addEventListener('focus', updateDropdown)
-    input.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag() }
-      if (e.key === 'Escape') {
-        if (!dropdown.isShown()) return
-        e.preventDefault()
-        e.stopPropagation()
-        dropdown.hide()
-      }
-    })
-    input.addEventListener('blur', () => {
-      setTimeout(() => dropdown.hide(), 150)
-      addTag()
-    })
-
-    renderChips()
-    if (this.tags.length >= 3) input.setAttribute('disabled', 'true')
-    return wrapper
   }
 
   protected getActiveWallets(config: PennyWalletConfig) {

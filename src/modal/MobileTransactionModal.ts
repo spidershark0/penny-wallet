@@ -151,58 +151,29 @@ export class MobileTransactionModal extends TransactionModal {
       () => dateInput.focus(),
     ).addClass('pw-mobile-date-row')
 
-    if (this.type === 'expense' || this.type === 'income') {
-      // Category
-      const categories = this.getCategoryOptions(config)
-      const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
-      this.addMobileBottomSheetRow(
-        this.mobileRowsEl,
-        t('modal.category'),
-        catLabel,
-        this.withEmptyOption(categories),
-        () => this.category,
-        (key) => { this.category = key },
-        true,
-      )
+    const categories = this.getCategoryOptions(config)
+    const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
+    const isTransferOrPayment = this.type !== 'expense' && this.type !== 'income'
+    const onCategoryChange = isTransferOrPayment
+      ? (key: string) => { this.category = key; this.renderMobileRows(config) }
+      : (key: string) => { this.category = key }
 
-      // Wallet
-      const walletOptions = this.type === 'income'
-        ? activeWallets.filter(w => w.type !== 'creditCard')
-        : activeWallets
-      this.addMobileBottomSheetRow(
-        this.mobileRowsEl,
-        t('modal.wallet'),
-        this.wallet || '—',
-        this.withEmptyOption(walletOptions.map(w => ({ key: w.name, label: w.name }))),
-        () => this.wallet,
-        (key) => { this.wallet = key },
-        true,
-      )
+    this.addMobileBottomSheetRow(
+      this.mobileRowsEl,
+      t('modal.category'),
+      catLabel,
+      this.withEmptyOption(categories),
+      () => this.category,
+      onCategoryChange,
+      true,
+    )
 
-    } else {
-      // Category
-      const categories = this.getCategoryOptions(config)
-      const catLabel = categories.find(c => c.key === this.category)?.label ?? (this.category || '—')
-      this.addMobileBottomSheetRow(
-        this.mobileRowsEl,
-        t('modal.category'),
-        catLabel,
-        this.withEmptyOption(categories),
-        () => this.category,
-        (key) => {
-          this.category = key
-          this.renderMobileRows(config)
-        },
-        true,
-      )
-
-      // Normalize wallet state when category constrains wallet types
+    if (isTransferOrPayment) {
       this.normalizeWalletForCategory(config)
 
       const { fromCandidates: fromWallets, toCandidates: toWallets }
         = getTransferWalletCandidates(activeWallets, this.category)
 
-      // From wallet
       this.addMobileBottomSheetRow(
         this.mobileRowsEl,
         t('modal.fromWallet'),
@@ -213,7 +184,6 @@ export class MobileTransactionModal extends TransactionModal {
         true,
       )
 
-      // To wallet
       this.addMobileBottomSheetRow(
         this.mobileRowsEl,
         t('modal.toWallet'),
@@ -223,13 +193,29 @@ export class MobileTransactionModal extends TransactionModal {
         (key) => { this.toWallet = key },
         true,
       )
+    } else {
+      const walletOptions = this.type === 'income'
+        ? activeWallets.filter(w => w.type !== 'creditCard')
+        : activeWallets
+
+      this.addMobileBottomSheetRow(
+        this.mobileRowsEl,
+        t('modal.wallet'),
+        this.wallet || '—',
+        this.withEmptyOption(walletOptions.map(w => ({ key: w.name, label: w.name }))),
+        () => this.wallet,
+        (key) => { this.wallet = key },
+        true,
+      )
     }
 
     // Tags — chips-or-placeholder row, taps anywhere to open multi-select picker
     const tagRow = this.mobileRowsEl.createDiv('pw-mobile-row')
+    tagRow.dataset['testid'] = 'mobile-tag-row'
     tagRow.createEl('span', { cls: 'pw-mobile-row-label', text: t('modal.tags') })
     const tagWrapper = tagRow.createDiv('pw-tag-input-wrapper')
     const tagChipsEl = tagWrapper.createDiv('pw-mobile-tag-chips')
+    tagChipsEl.dataset['testid'] = 'mobile-tag-chips'
 
     const renderMobChips = () => {
       tagChipsEl.empty()
@@ -243,10 +229,12 @@ export class MobileTransactionModal extends TransactionModal {
       for (const tag of this.tags) {
         // Display-only chips that match the picker's selected style (oval, accent).
         // Tap anywhere on the row (chip or whitespace) opens the picker (B1).
-        tagChipsEl.createSpan({
+        const chip = tagChipsEl.createSpan({
           cls: 'pw-tag-picker-chip is-selected',
           text: `#${tag}`,
         })
+        chip.dataset['testid'] = 'mobile-tag-chip'
+        chip.dataset['tag'] = tag
       }
     }
 

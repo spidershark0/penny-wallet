@@ -71,10 +71,21 @@ export class DetailView extends ItemView {
       })
     this.cachedDp = this.walletFile.getConfig().decimalPlaces ?? 0
 
-    // ── Header (fixed) ────────────────────────────────────────────────────────
     const header = contentEl.createDiv('pw-detail-header')
+    this.renderNavRow(header)
+    this.renderTypePills(header)
+    this.renderSearchInput(header)
 
-    // Month nav
+    const listWrap = contentEl.createDiv('pw-detail-list-wrap')
+    this.listWrapEl = listWrap
+    this.listEl = listWrap.createDiv('pw-tx-list')
+    this.subtotalEl = contentEl.createDiv('pw-subtotal-row')
+
+    this.applyFilters()
+    if (savedScroll > 0) listWrap.scrollTop = savedScroll
+  }
+
+  private renderNavRow(header: HTMLElement): void {
     const navRow = header.createDiv('pw-nav-row')
     navRow.createEl('button', { text: '‹', cls: 'pw-nav-btn' }).addEventListener('click', () => {
       this.currentYearMonth = stepMonth(this.currentYearMonth, -1)
@@ -104,9 +115,112 @@ export class DetailView extends ItemView {
         () => { addBtn.disabled = false },
       ).open()
     })
+  }
 
-    // Type pills (multi-select) + category dropdown in the same row
+  private renderCategoryDropdown(container: HTMLElement): void {
+    const showCategories = this.filterTypes.size === 0 ||
+      this.filterTypes.has('expense') ||
+      this.filterTypes.has('income') ||
+      this.filterTypes.has('transfer')
+
+    if (!showCategories) return
+
+    const catSource = this.cachedTransactions.filter(tx => {
+      if (this.filterTypes.size === 0) return tx.type === 'expense' || tx.type === 'income' || tx.type === 'transfer'
+      return this.filterTypes.has(tx.type)
+    })
+    const allCategories = new Set<string>()
+    catSource.forEach(tx => { if (tx.category) allCategories.add(tx.category) })
+
+    for (const cat of this.filterCategories) {
+      if (!allCategories.has(cat)) this.filterCategories.delete(cat)
+    }
+
+    if (allCategories.size === 0) return
+
+    const catDropdown = container.createDiv('pw-cat-dropdown')
+
+    const catToggleBtn = catDropdown.createEl('button', { cls: 'pw-cat-toggle' })
+    const updateToggleLabel = () => {
+      const badge = this.filterCategories.size > 0 ? ` · ${this.filterCategories.size}` : ''
+      catToggleBtn.setText(`${t('detail.filterCategory')}${badge} ${this.catPanelOpen ? '▴' : '▾'}`)
+    }
+    updateToggleLabel()
+
+    const catPanel = catDropdown.createDiv('pw-cat-panel')
+    if (!this.catPanelOpen) catPanel.hide()
+
+    const onOutsideClick = (e: MouseEvent) => {
+      if (!catDropdown.contains(e.target as Node)) {
+        this.catPanelOpen = false
+        catPanel.hide()
+        updateToggleLabel()
+        document.removeEventListener('click', onOutsideClick)
+      }
+    }
+    this.register(() => document.removeEventListener('click', onOutsideClick))
+
+    if (this.catPanelOpen) {
+      document.addEventListener('click', onOutsideClick)
+    }
+
+    catToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      this.catPanelOpen = !this.catPanelOpen
+      if (this.catPanelOpen) {
+        catPanel.show()
+        document.addEventListener('click', onOutsideClick)
+      } else {
+        catPanel.hide()
+        document.removeEventListener('click', onOutsideClick)
+      }
+      updateToggleLabel()
+    })
+
+    const allItem = catPanel.createDiv('pw-cat-item')
+    const allCheck = allItem.createEl('span', { cls: 'pw-cat-check' + (this.filterCategories.size === 0 ? ' is-checked' : '') })
+    if (this.filterCategories.size === 0) allCheck.setText('✓')
+    allItem.createEl('span', { text: t('detail.filterAll') })
+    allItem.addEventListener('click', () => {
+      this.filterCategories.clear()
+      catPanel.querySelectorAll('.pw-cat-check').forEach((el, i) => {
+        if (i === 0) { el.addClass('is-checked'); el.setText('✓') }
+        else { el.removeClass('is-checked'); el.setText('') }
+      })
+      updateToggleLabel()
+      this.applyFilters()
+    })
+
+    for (const cat of allCategories) {
+      const item = catPanel.createDiv('pw-cat-item')
+      const isChecked = this.filterCategories.has(cat)
+      const check = item.createEl('span', { cls: 'pw-cat-check' + (isChecked ? ' is-checked' : '') })
+      if (isChecked) check.setText('✓')
+      item.createEl('span', { text: translateCategory(cat) })
+      item.addEventListener('click', () => {
+        if (this.filterCategories.has(cat)) {
+          this.filterCategories.delete(cat)
+          check.removeClass('is-checked')
+          check.setText('')
+        } else {
+          this.filterCategories.add(cat)
+          check.addClass('is-checked')
+          check.setText('✓')
+        }
+        const allCheckEl = catPanel.querySelector('.pw-cat-item:first-child .pw-cat-check')
+        if (allCheckEl) {
+          if (this.filterCategories.size === 0) { allCheckEl.addClass('is-checked'); allCheckEl.textContent = '✓' }
+          else { allCheckEl.removeClass('is-checked'); allCheckEl.textContent = '' }
+        }
+        updateToggleLabel()
+        this.applyFilters()
+      })
+    }
+  }
+
+  private renderTypePills(header: HTMLElement): void {
     const typePills = header.createDiv('pw-type-pills')
+
     const allTypePill = typePills.createEl('button', {
       text: t('detail.filterAll'),
       cls: 'pw-pill' + (this.filterTypes.size === 0 ? ' is-active' : ''),
@@ -142,117 +256,15 @@ export class DetailView extends ItemView {
       pill.addEventListener('click', pillHandler)
     }
 
-    // Category dropdown (same row, right side)
-    const showCategories = this.filterTypes.size === 0 ||
-      this.filterTypes.has('expense') ||
-      this.filterTypes.has('income') ||
-      this.filterTypes.has('transfer')
+    this.renderCategoryDropdown(typePills)
+  }
 
-    if (showCategories) {
-      const catSource = this.cachedTransactions.filter(tx => {
-        if (this.filterTypes.size === 0) return tx.type === 'expense' || tx.type === 'income' || tx.type === 'transfer'
-        return this.filterTypes.has(tx.type)
-      })
-      const allCategories = new Set<string>()
-      catSource.forEach(tx => {
-        if (tx.category) allCategories.add(tx.category)
-      })
-
-      for (const cat of this.filterCategories) {
-        if (!allCategories.has(cat)) this.filterCategories.delete(cat)
-      }
-
-      if (allCategories.size > 0) {
-        const catDropdown = typePills.createDiv('pw-cat-dropdown')
-
-        const catToggleBtn = catDropdown.createEl('button', { cls: 'pw-cat-toggle' })
-        const updateToggleLabel = () => {
-          const badge = this.filterCategories.size > 0 ? ` · ${this.filterCategories.size}` : ''
-          catToggleBtn.setText(`${t('detail.filterCategory')}${badge} ${this.catPanelOpen ? '▴' : '▾'}`)
-        }
-        updateToggleLabel()
-
-        const catPanel = catDropdown.createDiv('pw-cat-panel')
-        if (!this.catPanelOpen) catPanel.hide()
-
-        // Close on outside click
-        const onOutsideClick = (e: MouseEvent) => {
-          if (!catDropdown.contains(e.target as Node)) {
-            this.catPanelOpen = false
-            catPanel.hide()
-            updateToggleLabel()
-            document.removeEventListener('click', onOutsideClick)
-          }
-        }
-        this.register(() => document.removeEventListener('click', onOutsideClick))
-
-        // Re-register if panel was open before render (e.g. type pill clicked while dropdown open)
-        if (this.catPanelOpen) {
-          document.addEventListener('click', onOutsideClick)
-        }
-
-        catToggleBtn.addEventListener('click', (e) => {
-          e.stopPropagation()
-          this.catPanelOpen = !this.catPanelOpen
-          if (this.catPanelOpen) {
-            catPanel.show()
-            document.addEventListener('click', onOutsideClick)
-          } else {
-            catPanel.hide()
-            document.removeEventListener('click', onOutsideClick)
-          }
-          updateToggleLabel()
-        })
-
-        // 全部 item
-        const allItem = catPanel.createDiv('pw-cat-item')
-        const allCheck = allItem.createEl('span', { cls: 'pw-cat-check' + (this.filterCategories.size === 0 ? ' is-checked' : '') })
-        if (this.filterCategories.size === 0) allCheck.setText('✓')
-        allItem.createEl('span', { text: t('detail.filterAll') })
-        allItem.addEventListener('click', () => {
-          this.filterCategories.clear()
-          catPanel.querySelectorAll('.pw-cat-check').forEach((el, i) => {
-            if (i === 0) { el.addClass('is-checked'); el.setText('✓') }
-            else { el.removeClass('is-checked'); el.setText('') }
-          })
-          updateToggleLabel()
-          this.applyFilters()
-        })
-
-        for (const cat of allCategories) {
-          const item = catPanel.createDiv('pw-cat-item')
-          const isChecked = this.filterCategories.has(cat)
-          const check = item.createEl('span', { cls: 'pw-cat-check' + (isChecked ? ' is-checked' : '') })
-          if (isChecked) check.setText('✓')
-          item.createEl('span', { text: translateCategory(cat) })
-          item.addEventListener('click', () => {
-            if (this.filterCategories.has(cat)) {
-              this.filterCategories.delete(cat)
-              check.removeClass('is-checked')
-              check.setText('')
-            } else {
-              this.filterCategories.add(cat)
-              check.addClass('is-checked')
-              check.setText('✓')
-            }
-            // Sync 全部 state
-            const allCheckEl = catPanel.querySelector('.pw-cat-item:first-child .pw-cat-check')
-            if (allCheckEl) {
-              if (this.filterCategories.size === 0) { allCheckEl.addClass('is-checked'); allCheckEl.textContent = '✓' }
-              else { allCheckEl.removeClass('is-checked'); allCheckEl.textContent = '' }
-            }
-            updateToggleLabel()
-            this.applyFilters()
-          })
-        }
-      }
-    }
-
-    // Search input
+  private renderSearchInput(header: HTMLElement): void {
     const searchInput = header.createEl('input', {
       cls: 'pw-search-input',
       placeholder: t('detail.searchPlaceholder'),
     })
+    searchInput.dataset['testid'] = 'detail-search'
     searchInput.type = 'text'
     searchInput.setAttribute('enterkeyhint', 'done')
     searchInput.value = this.filterSearch
@@ -263,17 +275,6 @@ export class DetailView extends ItemView {
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') searchInput.blur()
     })
-
-    // ── Scrollable list area ──────────────────────────────────────────────────
-    const listWrap = contentEl.createDiv('pw-detail-list-wrap')
-    this.listWrapEl = listWrap
-    this.listEl = listWrap.createDiv('pw-tx-list')
-
-    // ── Subtotals (fixed bottom) ──────────────────────────────────────────────
-    this.subtotalEl = contentEl.createDiv('pw-subtotal-row')
-
-    this.applyFilters()
-    if (savedScroll > 0) listWrap.scrollTop = savedScroll
   }
 
   private applyFilters() {
@@ -319,6 +320,7 @@ export class DetailView extends ItemView {
 
   private renderTxRow(container: HTMLElement, tx: Transaction, dp: 0 | 2 = 0) {
     const row = container.createDiv('pw-tx-row')
+    row.dataset['testid'] = 'tx-row'
 
     row.createEl('span', { text: tx.date, cls: 'pw-tx-date' })
 
@@ -342,7 +344,9 @@ export class DetailView extends ItemView {
       if (tx.tags?.length) {
         const tagsEl = bottom.createSpan('pw-tx-tags')
         for (const tag of tx.tags) {
-          tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
+          const tagChip = tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
+          tagChip.dataset['testid'] = 'tx-tag-chip'
+          tagChip.dataset['tag'] = tag
         }
       }
       if (tx.note) bottom.createEl('span', { text: tx.note, cls: 'pw-tx-note' })
