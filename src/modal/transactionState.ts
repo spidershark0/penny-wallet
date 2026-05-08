@@ -1,7 +1,6 @@
 import type { TransactionType, PennyWalletConfig, Transaction, Wallet } from '../types'
 import { translateCategory } from '../i18n'
-import { validateTag } from '../utils'
-import { dateToMonthDay } from '../io/WalletFile'
+import { validateTag, dateToMonthDay } from '../utils'
 
 /**
  * Form state shared between TransactionModal and helpers in this module.

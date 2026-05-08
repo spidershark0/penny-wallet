@@ -47,3 +47,11 @@ export function formatMobileHeroAmount(raw: string, isRefund: boolean): string {
   const amount = `$${formatHeroAmount(raw)}`
   return isRefund && raw !== '' ? `+ ${amount}` : amount
 }
+
+export function dateToYearMonth(date: string): string {
+  return date.substring(0, 7)
+}
+
+export function dateToMonthDay(date: string): string {
+  return date.substring(5).replace('-', '/')
+}

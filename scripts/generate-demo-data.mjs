@@ -18,6 +18,8 @@ const SECONDARY_BANK = 'Citibank'
 const PRIMARY_CARD = 'Visa Platinum'
 const SECONDARY_CARD = 'Mastercard World'
 
+const fixedTags = ['daily', 'essential', 'family', 'fun', 'health', 'invest', 'online', 'outing', 'travel', 'work']
+
 const wallets = [
   {
     name: CASH_WALLET,
@@ -61,6 +63,7 @@ const config = {
   defaultWallet: CASH_WALLET,
   folderName: 'PennyWallet',
   decimalPlaces: 0,
+  tags: fixedTags,
   options: {
     types: { default: ['expense', 'income', 'transfer'], custom: [] },
     categories: {
@@ -95,7 +98,7 @@ const expenseWalletPool = [CASH_WALLET, PRIMARY_BANK, SECONDARY_BANK, PRIMARY_CA
 const incomeWalletPool = [PRIMARY_BANK, SECONDARY_BANK, CASH_WALLET]
 const creditCards = [PRIMARY_CARD, SECONDARY_CARD]
 const notes = {
-  food: ['早餐', 'Lunch', 'Dinner', 'Coffee', 'Snack', 'Groceries'],
+  food: ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Snack', 'Groceries'],
   clothing: ['Shirt', 'Shoes', 'Jacket', 'Accessories'],
   housing: ['Rent', 'Utilities', 'Management Fee', 'Internet Bill'],
   transport: ['Metro', 'Bus', 'Parking', 'High Speed Rail', 'Taxi'],
@@ -114,6 +117,30 @@ const notes = {
   cashback: ['Credit Card Cashback', 'Platform Reward'],
   dividend: ['Stock Dividend'],
   investment_profit: ['ETF Gain', 'Fund Redemption'],
+}
+
+const categoryTags = {
+  food: ['daily', 'outing'],
+  clothing: ['daily', 'online'],
+  housing: ['essential', 'family'],
+  transport: ['essential', 'outing'],
+  education: ['work', 'invest'],
+  entertainment: ['fun', 'outing'],
+  shopping: ['online', 'daily'],
+  medical: ['health', 'essential'],
+  cash_expense: ['daily'],
+  insurance: ['essential', 'family'],
+  fees: ['essential'],
+  tax: ['essential'],
+  salary: ['work'],
+  bonus: ['work'],
+  side_income: ['work'],
+  interest: ['invest'],
+  cashback: ['daily'],
+  dividend: ['invest'],
+  investment_profit: ['invest'],
+  account_transfer: ['daily'],
+  credit_card_payment: ['essential'],
 }
 
 function mulberry32(value) {
@@ -139,6 +166,14 @@ function chance(rate) {
 
 function pick(list) {
   return list[randInt(0, list.length - 1)]
+}
+
+function pickTags(tagPool) {
+  const candidates = [...new Set(tagPool)]
+  const first = pick(candidates)
+  if (candidates.length === 1 || !chance(0.3)) return [first]
+  const remaining = candidates.filter(tag => tag !== first)
+  return [first, pick(remaining)]
 }
 
 function weightedPick(entries) {
@@ -167,6 +202,9 @@ function createDate(year, monthIndex, day) {
 function makeTransaction(date, type, partial) {
   const createdAt = new Date(date)
   createdAt.setHours(randInt(0, 23), randInt(0, 59), randInt(0, 59), randInt(0, 999))
+  const tagChance = type === 'transfer' ? 0.2 : 0.55
+  const tagPool = categoryTags[partial.category] ?? fixedTags
+  const tags = partial.tags ?? (chance(tagChance) ? pickTags(tagPool) : undefined)
   return {
     date,
     type,
@@ -175,13 +213,15 @@ function makeTransaction(date, type, partial) {
     toWallet: partial.toWallet,
     category: partial.category,
     note: partial.note ?? '',
+    tags,
     amount: partial.amount,
     createdAt: createdAt.toISOString(),
   }
 }
 
 function formatRow(tx) {
-  return `| ${formatMonthDay(tx.date)} | ${tx.type} | ${tx.wallet ?? '-'} | ${tx.fromWallet ?? '-'} | ${tx.toWallet ?? '-'} | ${tx.category ?? '-'} | ${tx.note || '-'} | ${tx.amount} | ${tx.createdAt ?? '-'} |`
+  const tags = tx.tags?.length ? tx.tags.join(',') : '-'
+  return `| ${formatMonthDay(tx.date)} | ${tx.type} | ${tx.wallet ?? '-'} | ${tx.fromWallet ?? '-'} | ${tx.toWallet ?? '-'} | ${tx.category ?? '-'} | ${tx.note || '-'} | ${tags} | ${tx.amount} | ${tx.createdAt ?? '-'} |`
 }
 
 function computeSummary(transactions) {
@@ -197,7 +237,7 @@ function computeSummary(transactions) {
 function buildMonthContent(yearMonth, transactions) {
   const summary = computeSummary(transactions)
   const frontmatter = `---\nincome: ${summary.income}\nexpense: ${summary.expense}\nnetAsset: ${summary.netAsset}\n---\n`
-  const header = `\n## ${yearMonth}\n\n| Date | Type | Wallet | From | To | Category | Note | Amount | CreatedAt |\n|------|------|--------|------|----|----------|------|--------|-----------|`
+  const header = `\n## ${yearMonth}\n\n| Date | Type | Wallet | From | To | Category | Note | Tags | Amount | CreatedAt |\n|------|------|--------|------|----|----------|------|------|--------|-----------|`
   const rows = transactions.map(formatRow).join('\n')
   return frontmatter + header + (rows ? `\n${rows}` : '') + '\n'
 }

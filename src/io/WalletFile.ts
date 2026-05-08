@@ -129,18 +129,6 @@ export function buildMonthContent(yearMonth: string, transactions: Transaction[]
   return frontmatter + heading + TABLE_HEADER + (rows ? '\n' + rows : '') + '\n'
 }
 
-// ─── Month arithmetic helpers ─────────────────────────────────────────────────
-
-/** "yyyy-MM-DD" → "yyyy-mm" */
-export function dateToYearMonth(date: string): string {
-  return date.substring(0, 7)
-}
-
-/** "yyyy-MM-DD" → "MM/DD" (the format stored in markdown) */
-export function dateToMonthDay(date: string): string {
-  return date.substring(5).replace('-', '/')
-}
-
 // ─── Validation Helpers (pure functions) ─────────────────────────────────────
 
 export function detectFrontmatterIssues(
@@ -193,6 +181,11 @@ export function detectOrphanedWallets(
 }
 
 // ─── WalletFile class ─────────────────────────────────────────────────────────
+
+function txDateOrder(a: Transaction, b: Transaction): number {
+  const d = a.date.localeCompare(b.date)
+  return d !== 0 ? d : (a.createdAt ?? '').localeCompare(b.createdAt ?? '')
+}
 
 export class WalletFile {
   private app: App
@@ -306,22 +299,7 @@ export class WalletFile {
   async saveConfig(): Promise<void> {
     const path = ROOT_CONFIG_PATH
     const content = JSON.stringify(this.config, null, 2)
-    const file = this.app.vault.getFileByPath(path)
-    if (file) {
-      await this.app.vault.process(file, () => content)
-    } else {
-      try {
-        await this.app.vault.create(path, content)
-      } catch (e: unknown) {
-        if (!(e instanceof Error) || !e.message?.includes('already exists')) throw e
-        const retryFile = this.app.vault.getFileByPath(path)
-        if (retryFile) {
-          await this.app.vault.process(retryFile, () => content)
-        } else {
-          await this.app.vault.adapter.write(path, content)
-        }
-      }
-    }
+    await this.vaultWrite(path, content, true)
   }
 
   getConfig(): PennyWalletConfig {
@@ -364,22 +342,24 @@ export class WalletFile {
   private async writeMonthFile(yearMonth: string, content: string): Promise<void> {
     await this.ensureFolder()
     const path = this.monthFilePath(yearMonth)
+    await this.vaultWrite(path, content)
+  }
+
+  private async vaultWrite(path: string, content: string, adapterFallback = false): Promise<void> {
     const file = this.app.vault.getFileByPath(path)
     if (file) {
       await this.app.vault.process(file, () => content)
-    } else {
-      try {
-        await this.app.vault.create(path, content)
-      } catch (e: unknown) {
-        // Ignore "File already exists" error from race condition
-        if (!(e instanceof Error) || !e.message?.includes('already exists')) {
-          throw e
-        }
-        // File was created by another process; try to modify it
-        const retryFile = this.app.vault.getFileByPath(path)
-        if (retryFile) {
-          await this.app.vault.process(retryFile, () => content)
-        }
+      return
+    }
+    try {
+      await this.app.vault.create(path, content)
+    } catch (e: unknown) {
+      if (!(e instanceof Error) || !e.message?.includes('already exists')) throw e
+      const retryFile = this.app.vault.getFileByPath(path)
+      if (retryFile) {
+        await this.app.vault.process(retryFile, () => content)
+      } else if (adapterFallback) {
+        await this.app.vault.adapter.write(path, content)
       }
     }
   }
@@ -410,12 +390,7 @@ export class WalletFile {
     const content = await this.readMonthFile(yearMonth)
     const transactions = content ? parseMonthFile(content) : []
     transactions.push({ ...tx, createdAt: tx.createdAt ?? new Date().toISOString() })
-    transactions.sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date)
-      if (dateCompare !== 0) return dateCompare
-      if (a.createdAt && b.createdAt) return a.createdAt.localeCompare(b.createdAt)
-      return 0
-    })
+    transactions.sort(txDateOrder)
     if (tx.tags?.length) {
       this.mergeTags(tx.tags)
       await this.saveConfig()
@@ -440,12 +415,7 @@ export class WalletFile {
       const transactions = content ? parseMonthFile(content) : []
       const idx = this.findTransactionIndex(transactions, oldTx)
       if (idx !== -1) transactions[idx] = { ...newTx, createdAt: newTx.createdAt ?? oldTx.createdAt ?? new Date().toISOString() }
-      transactions.sort((a, b) => {
-        const dateCompare = a.date.localeCompare(b.date)
-        if (dateCompare !== 0) return dateCompare
-        if (a.createdAt && b.createdAt) return a.createdAt.localeCompare(b.createdAt)
-        return 0
-      })
+      transactions.sort(txDateOrder)
       if (newTx.tags?.length) {
         this.mergeTags(newTx.tags)
         await this.saveConfig()

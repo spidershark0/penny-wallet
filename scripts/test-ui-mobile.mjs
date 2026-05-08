@@ -20,6 +20,9 @@ const args = process.argv.slice(2)
 const vaultArg = args.find(a => a.startsWith('--vault='))?.split('=')[1]
              ?? args[args.indexOf('--vault') + 1]
 const VAULT = vaultArg ?? 'demo-vault'
+const MOBILE_TAG = 'essential'
+const MOBILE_EDIT_TAG = 'work'
+const mobileTagNote = `Mobile Tag E2E ${Date.now()}`
 
 let passed = 0
 let failed = 0
@@ -92,6 +95,15 @@ function clickAt(point) {
   return ok === 'true'
 }
 
+function tapAt(point) {
+  if (!point) return false
+  cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+  wait(80)
+  cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+  wait(500)
+  return true
+}
+
 function click(selector, predicate = '() => true') {
   const ok = evalJs(`(() => {
     const pred = ${predicate};
@@ -135,6 +147,39 @@ function activeMatches(selector) {
   return evalJs(`String(document.activeElement?.matches(${JSON.stringify(selector)}))`) === 'true'
 }
 
+function setInputValue(selector, value) {
+  evalJs(`(() => {
+    const input = document.querySelector(${JSON.stringify(selector)});
+    if (!input) return false;
+    input.value = ${JSON.stringify(value)};
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`)
+  wait(200)
+}
+
+function rowHasTag(note, tag) {
+  return evalJs(`String([...document.querySelectorAll('[data-testid=tx-row]')]
+    .some(row => row.textContent?.includes(${JSON.stringify(note)})
+      && [...row.querySelectorAll('[data-testid=tx-tag-chip]')].some(chip => chip.dataset.tag === ${JSON.stringify(tag)})))`) === 'true'
+}
+
+function countTagged(testid, tag) {
+  const result = evalJs(`String([...document.querySelectorAll('[data-testid=${testid}]')]
+    .filter(el => el.dataset.tag === ${JSON.stringify(tag)}).length)`)
+  const n = parseInt(result ?? '', 10)
+  return isNaN(n) ? -1 : n
+}
+
+function clickEditForRow(note) {
+  evalJs(`(() => {
+    const row = [...document.querySelectorAll('[data-testid=tx-row]')]
+      .find(el => el.textContent?.includes(${JSON.stringify(note)}));
+    row?.querySelector('.pw-txn-btn[data-action="edit"]')?.click();
+  })()`)
+  wait(600)
+}
+
 function openAddModal() {
   evalJs("document.querySelector('.modal-close-button')?.click()")
   obs('command id="penny-wallet:add-transaction"')
@@ -173,16 +218,31 @@ function selectFirstSheetOption() {
   return { selected, before, after }
 }
 
+function selectTagPickerTag(tag) {
+  return click('[data-testid=tag-picker-chip]', `(el) => el.dataset.tag === ${JSON.stringify(tag)}`)
+}
+
 function closeModal() {
   evalJs("document.querySelector('.modal-close-button')?.click()")
   wait(300)
 }
 
+function cleanupUiState() {
+  evalJs(`(() => {
+    document.querySelectorAll('.pw-bottom-sheet-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('pw-bottom-sheet-lock');
+    document.querySelectorAll('.modal-close-button').forEach(el => el.click());
+  })()`)
+  wait(300)
+}
+
 section('Mobile environment')
 
+obs('dev:mobile on')
 obs('dev:debug on')
 evalJs('app.emulateMobile(true)')
 setMobileViewport()
+cleanupUiState()
 
 const reloadResult = obs('plugin:reload id=penny-wallet')
 wait(800)
@@ -246,6 +306,7 @@ section('Bottom sheet picker')
 
 const categoryPoint = centerOf('.pw-mobile-bottom-sheet-row', "(el) => el.querySelector('.pw-mobile-row-label')?.textContent?.trim().length > 0")
 assert('Category picker row has tap target', clickAt(categoryPoint))
+wait(500)
 assert('Bottom sheet opens', count('.pw-bottom-sheet-backdrop.is-open') === 1)
 assert('Bottom sheet search is present', count('.pw-bottom-sheet-search') === 1)
 assert('Numpad hidden while picker is open', metric('.pw-mobile-numpad')?.display === 'none')
@@ -253,8 +314,7 @@ assert('Numpad hidden while picker is open', metric('.pw-mobile-numpad')?.displa
 section('Bottom sheet keyboard coexistence')
 
 const searchPoint = centerOf('.pw-bottom-sheet-search')
-assert('Search input has tap target', clickAt(searchPoint))
-wait(500)
+assert('Search input has tap target', tapAt(searchPoint))
 assert('Search input is focused after tap', activeMatches('.pw-bottom-sheet-search'))
 cdp('Input.insertText', { text: 'zzzz-no-match' })
 wait(500)
@@ -280,11 +340,29 @@ assert('Bottom sheet option can be selected', optionResult.selected)
 const rowValueAfter = text('.pw-mobile-bottom-sheet-row .pw-mobile-row-value')
 assert('Picker row value updates after selection', rowValueAfter !== rowValueBefore, `${rowValueBefore} -> ${rowValueAfter}`)
 
+section('Tag picker keyboard coexistence')
+
+assert('Tag row has tap target', clickAt(centerOf('[data-testid=mobile-tag-row]')))
+assert('Tag picker opens', count('.pw-tag-picker') === 1)
+assert('Fixed tag options render', countTagged('tag-picker-chip', MOBILE_TAG) === 1)
+const tagSearchPoint = centerOf('[data-testid=tag-picker-search]')
+assert('Tag search input has tap target', tapAt(tagSearchPoint))
+assert('Tag search input is focused after tap', activeMatches('[data-testid=tag-picker-search]'))
+cdp('Input.insertText', { text: 'zzzznomat' })
+wait(500)
+const tagSearchMetric = metric('[data-testid=tag-picker-search]')
+const tagEmptyMetric = metric('.pw-tag-picker-empty')
+assert('Tag picker no-results state renders', count('.pw-tag-picker-empty') === 1)
+assert('Focused tag search remains above viewport bottom', tagSearchMetric !== null && tagSearchMetric.bottom < 932, tagSearchMetric ? `bottom=${tagSearchMetric.bottom}` : 'missing')
+assert('Tag picker no-results remains above viewport bottom', tagEmptyMetric !== null && tagEmptyMetric.bottom < 932, tagEmptyMetric ? `bottom=${tagEmptyMetric.bottom}` : 'missing')
+assert('Numpad stays hidden during tag search focus', metric('.pw-mobile-numpad')?.display === 'none')
+click('[data-testid=tag-picker-cancel]')
+assert('Tag picker closes from cancel', count('.pw-tag-picker') === 0)
+
 section('Text input keyboard coexistence')
 
 const notePoint = centerOf('.pw-mobile-note-input')
-assert('Note input has tap target', clickAt(notePoint))
-wait(500)
+assert('Note input has tap target', tapAt(notePoint))
 assert('Note input is focused after tap', activeMatches('.pw-mobile-note-input'))
 assert('Text focus class is applied', count('.pw-mobile-content.pw-mobile-text-focus') === 1)
 assert('Numpad hidden while note input is focused', metric('.pw-mobile-numpad')?.display === 'none')
@@ -307,6 +385,11 @@ assert('Category row opens for selection', clickAt(centerOf('.pw-mobile-bottom-s
 assert('Category option selected', selectFirstSheetOption().selected)
 assert('Wallet row opens for selection', clickAt(centerOf('.pw-mobile-bottom-sheet-row', '(_el, i) => i === 1')))
 assert('Wallet option selected', selectFirstSheetOption().selected)
+assert('Tag row opens for selection', clickAt(centerOf('[data-testid=mobile-tag-row]')))
+assert('Tag option selected', selectTagPickerTag(MOBILE_TAG))
+click('[data-testid=tag-picker-done]')
+assert('Selected tag appears on mobile form', countTagged('mobile-tag-chip', MOBILE_TAG) === 1)
+setInputValue('.pw-mobile-note-input', mobileTagNote)
 
 click('.pw-mobile-numpad-confirm')
 wait(900)
@@ -314,16 +397,22 @@ const addError = text('.pw-error')
 assert('Mobile add modal closes after submit', count('.modal-content') === 0)
 openDetail()
 assert('Mobile add increases row count', count('.pw-tx-row') === rowsBeforeAdd + 1, `${rowsBeforeAdd} -> ${count('.pw-tx-row')}; error=${addError}`)
+assert('Mobile added transaction keeps tag in detail', rowHasTag(mobileTagNote, MOBILE_TAG))
 
 section('Mobile edit transaction')
 
 closeModal()
 openDetail()
 const rowsBeforeEdit = count('.pw-tx-row')
-click('.pw-txn-btn[data-action="edit"]')
-wait(600)
+clickEditForRow(mobileTagNote)
 assert('Mobile edit modal opens', count('.pw-mobile-content') > 0)
 assert('Mobile edit amount prefilled', (text('.pw-mobile-amount-display') ?? '').trim().length > 0)
+assert('Mobile edit pre-fills tag', countTagged('mobile-tag-chip', MOBILE_TAG) === 1)
+assert('Mobile edit tag row opens', clickAt(centerOf('[data-testid=mobile-tag-row]')))
+assert('Mobile edit can remove existing tag', selectTagPickerTag(MOBILE_TAG))
+assert('Mobile edit can select replacement tag', selectTagPickerTag(MOBILE_EDIT_TAG))
+click('[data-testid=tag-picker-done]')
+assert('Mobile edit shows replacement tag on form', countTagged('mobile-tag-chip', MOBILE_EDIT_TAG) === 1)
 tapNumpad('C')
 tapNumpad('9')
 tapNumpad('9')
@@ -334,6 +423,10 @@ const editError = text('.pw-error')
 assert('Mobile edit modal closes after submit', count('.modal-content') === 0, editError ?? '')
 openDetail()
 assert('Mobile edit keeps row count unchanged', count('.pw-tx-row') === rowsBeforeEdit)
+assert('Mobile edited transaction shows updated tag', rowHasTag(mobileTagNote, MOBILE_EDIT_TAG))
+setInputValue('[data-testid=detail-search]', MOBILE_EDIT_TAG)
+assert('Mobile detail search finds edited transaction by tag', rowHasTag(mobileTagNote, MOBILE_EDIT_TAG))
+setInputValue('[data-testid=detail-search]', '')
 
 section('Mobile delete transaction')
 
