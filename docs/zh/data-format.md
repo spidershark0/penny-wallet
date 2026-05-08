@@ -32,27 +32,29 @@ netAsset: 0
 
 ## 2026-04
 
-| Date  | Type      | Wallet     | From    | To       | Category | Note   | Amount | CreatedAt                |
-|-------|-----------|------------|---------|----------|----------|--------|--------|---------------------------|
-| 04/15 | income    | 玉山銀行   | -       | -        | salary   | 四月薪資 | 72000 | 2026-04-15T08:12:00.000Z |
-| 04/12 | expense   | 玉山信用卡 | -       | -        | shopping | 生活雜貨 | 1200  | 2026-04-12T14:30:00.000Z |
-| 04/10 | expense   | 現金       | -       | -        | food     | 午餐     | 280   | 2026-04-10T12:05:00.000Z |
-| 04/05 | transfer  | -          | 玉山銀行 | 現金     | -        | 提款     | 8000  | 2026-04-05T09:00:00.000Z |
-| 04/28 | repayment | -          | 玉山銀行 | 玉山信用卡 | -       | 繳卡費   | 5000  | 2026-04-28T10:00:00.000Z |
+| Date  | Type      | Wallet     | From    | To       | Category | Note     | Tags        | Amount | CreatedAt                |
+|-------|-----------|------------|---------|----------|----------|----------|-------------|--------|---------------------------|
+| 04/15 | income    | 玉山銀行   | -       | -        | salary   | 四月薪資 | salary      | 72000  | 2026-04-15T08:12:00.000Z |
+| 04/12 | expense   | 玉山信用卡 | -       | -        | shopping | 生活雜貨 | home,weekly | 1200   | 2026-04-12T14:30:00.000Z |
+| 04/11 | expense   | 玉山信用卡 | -       | -        | shopping | 退貨     | -           | -320   | 2026-04-11T16:20:00.000Z |
+| 04/10 | expense   | 現金       | -       | -        | food     | 午餐     | work        | 280    | 2026-04-10T12:05:00.000Z |
+| 04/05 | transfer  | -          | 玉山銀行 | 現金     | -        | 提款     | -           | 8000   | 2026-04-05T09:00:00.000Z |
+| 04/28 | transfer  | -          | 玉山銀行 | 玉山信用卡 | credit_card_payment | 繳卡費 | - | 5000 | 2026-04-28T10:00:00.000Z |
 ```
 
 ### 欄位說明
 
-| 欄位 | 支出 / 收入 | 轉帳 / 還款 |
+| 欄位 | 支出 / 收入 | 移轉 |
 |------|-----------|-----------|
 | Date | `MM/DD` | `MM/DD` |
-| Type | `expense` / `income` | `transfer` / `repayment` |
+| Type | `expense` / `income` | `transfer` |
 | Wallet | 帳戶名稱 | `-` |
 | From | `-` | 來源帳戶 |
 | To | `-` | 目標帳戶 |
-| Category | 分類 key 或自訂名稱 | `-` |
+| Category | 分類 key 或自訂名稱 | 移轉分類 key 或自訂名稱 |
 | Note | 選填文字 | 選填文字 |
-| Amount | 正數 | 正數 |
+| Tags | 逗號分隔標籤或 `-` | 逗號分隔標籤或 `-` |
+| Amount | 正數；退款支出使用負數 | 正數 |
 | CreatedAt | ISO 8601 UTC 時間戳記 | ISO 8601 UTC 時間戳記 |
 
 ### Frontmatter 快取
@@ -89,12 +91,15 @@ netAsset: 0
   "folderName": "PennyWallet",
   "decimalPlaces": 0,
   "options": {
-    "types": { "default": ["expense", "income", "transfer", "repayment"], "custom": [] },
+    "types": { "default": ["expense", "income", "transfer"], "custom": [] },
     "categories": {
-      "expense": { "default": ["food", "transport", "shopping", "entertainment", "medical", "housing", "other"], "custom": ["咖啡"] },
-      "income":  { "default": ["salary", "bonus", "side_income", "other"], "custom": [] }
+      "expense": { "default": ["food", "clothing", "housing", "transport", "education", "entertainment", "shopping", "medical", "cash_expense", "insurance", "fees", "tax"], "custom": ["咖啡"] },
+      "income":  { "default": ["salary", "interest", "side_income", "bonus", "lottery", "rent", "cashback", "dividend", "investment_profit", "insurance_income", "pension"], "custom": [] },
+      "transfer": { "default": ["account_transfer", "credit_card_payment", "investment_trade"], "custom": [] }
     }
-  }
+  },
+  "tags": [],
+  "autoValidateOnLoad": true
 }
 ```
 
@@ -143,6 +148,7 @@ WHERE expense > income
 - 日期必須使用 `MM/DD` 格式
 - 未使用的欄位用 `-`（不可留空）
 - 金額必須是純數字（無貨幣符號或千分位）
+- 退款會儲存為 `expense` 且金額為負數
 - `CreatedAt` 由 UI 寫入時自動填入 — 請勿手動修改，此欄位用於同日期交易的穩定排序
 
 手動編輯後，PennyWallet 會在下次渲染檢視時重新讀取檔案。Frontmatter 快取將在下次寫入該月份交易時自動更新。

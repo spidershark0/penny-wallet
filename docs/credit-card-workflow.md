@@ -11,7 +11,7 @@ Credit card accounts in PennyWallet track **outstanding debt**, not a traditiona
 | Add a credit card with initial balance `3000` | Starts with NT$3,000 outstanding debt |
 | Record an **Expense** on the credit card | Debt increases |
 | Record a **Transfer (Credit Card Payment)** | Debt decreases |
-| Record a **Transfer (Credit Card Refund)** | Debt decreases (refund reversal) |
+| Record an **Expense with Refund enabled** on the credit card | Debt decreases (refund reversal) |
 
 The balance shown in Finance Overview is displayed as a **negative number** (e.g. `−4,500`) because it represents money you owe, and is **subtracted** from your net asset.
 
@@ -85,11 +85,25 @@ This carries over into the next month automatically.
 
 ---
 
+## Refunds and Returns
+
+For a returned credit card purchase, create an **Expense** on the same credit card account and enable **This is a refund**. PennyWallet stores it as a negative expense, displays it as a positive expense reversal, and reduces the card's outstanding debt.
+
+> **Type:** Expense
+> **Account:** Visa Platinum
+> **Category:** Shopping
+> **Amount:** 1200
+> **Refund:** Enabled
+
+Refunds are not transfer categories in the current data model.
+
+---
+
 ## Key Rules
 
 - **Credit Card Payment From Account** must be Cash or Bank — you cannot pay one credit card with another
 - **Credit Card Payment To Account** must be a Credit Card
-- **Credit Card Refund** uses the same account for both From and To — the credit card that was charged
+- **Refunds** use Expense with the refund toggle, not Transfer
 - A credit card's balance **cannot go below zero** in normal usage (paying more than you owe is technically allowed but unusual)
 
 ---

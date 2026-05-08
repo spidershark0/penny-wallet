@@ -36,7 +36,8 @@ Represents a bank account, savings account, or e-wallet.
 Represents a credit card. The balance tracks **outstanding debt**, not available credit.
 
 - Expenses **increase** the debt
-- Repayments **decrease** the debt
+- Credit card payment transfers **decrease** the debt
+- Refund expenses **decrease** the debt
 - Displayed with a **−** sign in the Finance Overview (because it's money you owe)
 - Subtracted from net asset
 

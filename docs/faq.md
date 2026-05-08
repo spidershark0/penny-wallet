@@ -44,12 +44,18 @@ Use a **Transfer**:
 
 ### How do I record paying a credit card bill?
 
-Use a **Repayment**:
+Use a **Transfer** with category **Credit Card Payment**:
 - From: the bank / cash account you paid from
 - To: the credit card you're paying off
 - Amount: the payment amount
 
 See [Credit Card Workflow](./credit-card-workflow) for a full walkthrough.
+
+---
+
+### How do I record a credit card refund?
+
+Use an **Expense** on the same credit card and enable **This is a refund**. It is stored as a negative expense and reduces the card's outstanding debt.
 
 ---
 
@@ -82,7 +88,7 @@ Yes. All features work on mobile, including the transaction form and all three v
 Check that:
 1. The date column uses `MM/DD` format (not `YYYY-MM-DD`)
 2. Empty columns use `-` not an empty string
-3. The table separator row (`|---|---|...`) is present and has the correct number of columns (8)
+3. The table separator row (`|---|---|...`) is present and has the correct number of columns (10)
 4. The amount is a plain number without commas, currency symbols, or spaces
 
 ---

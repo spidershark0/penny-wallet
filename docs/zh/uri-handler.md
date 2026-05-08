@@ -64,8 +64,9 @@ obsidian://penny-wallet?參數1=值1&參數2=值2
 |-----|------|------|
 | `account_transfer` | 帳戶互轉 | Account Transfer |
 | `credit_card_payment` | 信用卡繳費 | Credit Card Payment |
-| `credit_card_refund` | 信用卡刷退 | Credit Card Refund |
 | `investment_trade` | 投資買賣 | Investment Trade |
+
+信用卡退款是在表單中以支出退款記錄，不是移轉分類。
 
 ---
 

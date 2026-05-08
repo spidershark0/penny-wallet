@@ -43,7 +43,7 @@ Two pie charts appear if there is data:
 - **Expense by Category** — breakdown of this month's spending
 - **Income by Category** — breakdown of this month's income
 
-Each legend entry shows the category name, amount, and percentage. Hover over a slice or legend item to highlight it.
+Each legend entry shows the category name, amount, and percentage. Small categories are grouped into **Others**; select that slice to drill into the grouped items. Hover over a slice or legend item to highlight it.
 
 ---
 
@@ -53,7 +53,7 @@ A full list of all transactions for the selected month, with filters and subtota
 
 ### Filters
 
-- **Type pills** — multi-select: All / Expense / Income / Transfer / Repayment (tap multiple to combine)
+- **Type pills** — multi-select: All / Expense / Income / Transfer (tap multiple to combine)
 - **Category dropdown** — checklist of categories present in the filtered results; select any combination to narrow further
 - **Keyword search** — filters transactions whose note contains the search text
 
@@ -61,7 +61,7 @@ A full list of all transactions for the selected month, with filters and subtota
 
 Each row shows: date, type badge, category, note, account (or From → To for transfers), and amount.
 
-Click **✏** to edit or **🗑** to delete. A confirmation dialog appears before deletion.
+On desktop, hover a row to reveal **✏** edit and **🗑** delete. On mobile, actions stay visible. A confirmation dialog appears before deletion. Refund expenses appear as positive expense reversals, visually distinct from income.
 
 ### Subtotals
 

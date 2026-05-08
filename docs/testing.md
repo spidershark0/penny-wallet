@@ -136,7 +136,8 @@ These functions are **pure** (no I/O, no Obsidian API):
 | Function | What to assert |
 |----------|---------------|
 | `parseRow` | Valid row → correct Transaction object |
-| `parseRow` | `payment` type → normalised to `repayment` (backward compat) |
+| `parseRow` | legacy `payment` / `repayment` type → normalised to `transfer` + `credit_card_payment` |
+| `parseRow` | negative amount → refund expense parsed |
 | `parseRow` | `-` fields → `undefined` in result |
 | `parseRow` | Less than 8 columns → `null` |
 | `parseRow` | Non-numeric amount → `null` |
@@ -159,9 +160,10 @@ These functions are **pure** (no I/O, no Obsidian API):
 |----------|----------------|
 | expense on bank → balance decreases | `initialBalance - amount` |
 | expense on creditCard → debt increases | `initialBalance + amount` |
+| negative expense on creditCard → debt decreases | `initialBalance - amount` |
 | income on bank → balance increases | `initialBalance + amount` |
 | transfer → fromWallet decreases, toWallet increases | both correct |
-| repayment → bank decreases, creditCard debt decreases | both correct |
+| `credit_card_payment` transfer → bank decreases, creditCard debt decreases | both correct |
 | wallet not in config → silently ignored | no crash |
 | wallet order → always cash → bank → creditCard | sort verified |
 
@@ -180,7 +182,8 @@ These functions are **pure** (no I/O, no Obsidian API):
 |----------|---------|
 | only expenses | `income: 0, expense: Σ` |
 | only income | `income: Σ, expense: 0` |
-| transfer/repayment excluded | not counted in either |
+| transfer excluded | not counted in either |
+| negative expense refund | reduces expense total |
 | `netAsset` always 0 | (frontmatter cache only) |
 
 `groupByCategory`
@@ -305,6 +308,8 @@ export function createMockApp(initialFiles: Record<string, string> = {}) {
 | Finance Overview — pie charts | Chart renders, legend items |
 | Add Transaction modal | Modal opens, type tabs present |
 | Add expense transaction | Full form submit: wallet selected, amount filled, modal closes |
+| Add refund transaction | Refund toggle stores a negative expense |
+| Mobile tag picker | Bottom sheet opens, search/new-tag flow works |
 | Assets view | View opens, range selector, and charts render |
 | Transactions (Detail) view | View opens, filter pills, rows rendered, expense filter |
 | Edit transaction | Edit modal opens, pre-fills data, submit closes modal, row count unchanged |

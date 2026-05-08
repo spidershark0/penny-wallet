@@ -36,24 +36,26 @@
 }
 
 /* Desktop hero image sizing and card-like visual treatment. */
-.VPHero.has-image .image {
-  flex: 0 0 min(64%, 900px);
-}
-
 .VPHero.has-image .image-container {
   width: 100%;
-  max-width: 900px;
+  max-width: 440px;
+  margin: 0 auto;
+  transform: none;
 }
 
-.VPHero.has-image .image-bg,
-.VPHero.has-image .image-src {
-  border-radius: 18px;
+.VPHero.has-image .image-bg {
+  display: none;
 }
 
 .VPHero.has-image .image-src {
+  position: static;
+  transform: none;
   display: block;
   width: 100%;
   height: auto;
+  max-width: none;
+  max-height: none;
+  border-radius: 18px;
   box-shadow: 0 20px 56px rgba(12, 110, 75, 0.22);
 }
 
@@ -84,7 +86,7 @@
   }
 
   .VPHero.has-image .image-container {
-    width: min(calc(100vw - 24px), 760px);
+    width: min(calc(100vw - 24px), 520px);
     max-width: 100%;
     margin: 0 auto;
     height: auto;

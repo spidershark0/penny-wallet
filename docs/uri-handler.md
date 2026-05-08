@@ -64,8 +64,9 @@ obsidian://penny-wallet?param1=value1&param2=value2
 |-----|---------|---------|
 | `account_transfer` | Account Transfer | 帳戶互轉 |
 | `credit_card_payment` | Credit Card Payment | 信用卡繳費 |
-| `credit_card_refund` | Credit Card Refund | 信用卡刷退 |
 | `investment_trade` | Investment Trade | 投資買賣 |
+
+Credit card refunds are recorded as expense refunds in the form, not as transfer categories.
 
 ---
 

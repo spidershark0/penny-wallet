@@ -16,8 +16,9 @@ coverage/
 main.js
 
 # docs build
-docs/.vitepress/dist
-docs/.vitepress/cache
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/.vitepress/.temp/
 
 # Ignore generated demo-vault data; keep only the checked-in plugin list.
 demo-vault/*
