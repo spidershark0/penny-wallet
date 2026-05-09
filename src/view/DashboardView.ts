@@ -1,13 +1,11 @@
-import { Events, ItemView, Platform, WorkspaceLeaf } from 'obsidian'
+import { Events, ItemView, WorkspaceLeaf } from 'obsidian'
 import { WalletFile } from '../io/WalletFile'
-import { TransactionModal } from '../modal/TransactionModal'
-import { MobileTransactionModal } from '../modal/MobileTransactionModal'
 import { t, formatMonthLabel, formatYearMonth } from '../i18n'
-import { currentYearMonth, stepMonth, isAfterCurrentMonth } from '../utils'
+import { currentYearMonth } from '../utils'
 import { createMetric, renderCard } from './components'
 import { TransactionType } from '../types'
 import { DETAIL_VIEW_TYPE } from './DetailView'
-import { ASSET_VIEW_TYPE } from './AssetView'
+import { renderSharedHeader } from './SharedHeader'
 import { Chart } from 'chart.js'
 import { MonthData, drawIncExpChart, drawPie, getMonthRangeEndingAt } from './charts'
 
@@ -63,45 +61,12 @@ export class DashboardView extends ItemView {
       this.walletFile.getNetAssetTimeline(months),
     ])
 
-    // ── Header ──────────────────────────────────────────────────────────────
-    const header = contentEl.createDiv('pw-nav-row')
-
-    const monthNav = header.createDiv('pw-month-nav')
-    const prevBtn = monthNav.createEl('button', { text: '‹', cls: 'pw-nav-btn' })
-    monthNav.createEl('span', { text: this.currentYearMonth, cls: 'pw-month-label' })
-    const nextBtn = monthNav.createEl('button', { text: '›', cls: 'pw-nav-btn' })
-
-    const isNextFuture = isAfterCurrentMonth(stepMonth(this.currentYearMonth, 1))
-    nextBtn.disabled = isNextFuture
-
-    prevBtn.addEventListener('click', () => {
-      this.currentYearMonth = stepMonth(this.currentYearMonth, -1)
-      void this.render()
-    })
-    nextBtn.addEventListener('click', () => {
-      if (!isNextFuture) { this.currentYearMonth = stepMonth(this.currentYearMonth, 1); void this.render() }
-    })
-
-    const headerActions = header.createDiv('pw-nav-right')
-    const assetBtn  = headerActions.createEl('button', { text: t('ui.asset'),           cls: 'pw-action-btn' })
-    const detailBtn = headerActions.createEl('button', { text: t('ui.detail'),          cls: 'pw-action-btn' })
-    const addBtn    = headerActions.createEl('button', { text: '+ ' + t('ui.addTransaction'), cls: 'pw-action-btn' })
-
-    assetBtn.addEventListener('click', () => {
-      void this.openOrRevealView(ASSET_VIEW_TYPE)
-    })
-    detailBtn.addEventListener('click', () => {
-      void this.openOrRevealView(DETAIL_VIEW_TYPE, {
-        state: { yearMonth: this.currentYearMonth },
-      })
-    })
-    addBtn.addEventListener('click', () => {
-      addBtn.disabled = true
-      const ModalClass = Platform.isMobile ? MobileTransactionModal : TransactionModal
-      new ModalClass(this.app, this.walletFile, {}, null, null,
-        () => (this.app.workspace as Events).trigger('penny-wallet:refresh'),
-        () => { addBtn.disabled = false },
-      ).open()
+    renderSharedHeader(contentEl, {
+      view: this,
+      walletFile: this.walletFile,
+      activeView: 'dashboard',
+      yearMonth: this.currentYearMonth,
+      onMonthChange: (ym) => { this.currentYearMonth = ym; void this.render() },
     })
 
     const dp = this.walletFile.getConfig().decimalPlaces ?? 0

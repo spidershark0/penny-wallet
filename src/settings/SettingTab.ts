@@ -48,6 +48,8 @@ export class PennyWalletSettingTab extends PluginSettingTab {
     const config = this.walletFile.getConfig()
     const { containerEl } = this
 
+    new Setting(containerEl).setName(t('settings.general')).setHeading()
+
     const group = containerEl.createDiv('pw-settings-group')
 
     new Setting(group)

@@ -1,11 +1,13 @@
-import { Events, ItemView, Platform, ViewStateResult, WorkspaceLeaf, Notice, setIcon } from 'obsidian'
+import { Events, ItemView, Platform, ViewStateResult, WorkspaceLeaf } from 'obsidian'
 import { WalletFile } from '../io/WalletFile'
 import { TransactionModal } from '../modal/TransactionModal'
 import { MobileTransactionModal } from '../modal/MobileTransactionModal'
-import { ConfirmModal } from '../modal/ConfirmModal'
+import { openFilterSheet } from '../modal/BottomSheetPicker'
 import { t, translateCategory } from '../i18n'
 import { Transaction, TransactionType } from '../types'
-import { currentYearMonth, stepMonth, isAfterCurrentMonth, formatAmount } from '../utils'
+import { currentYearMonth, formatAmount } from '../utils'
+import { renderSharedHeader } from './SharedHeader'
+import { buildAmountDisplay, buildLine3Display, buildWalletText } from './detailRow'
 
 export const DETAIL_VIEW_TYPE = 'penny-wallet-detail'
 
@@ -14,8 +16,12 @@ export class DetailView extends ItemView {
   private currentYearMonth: string
   private filterTypes: Set<TransactionType> = new Set()   // empty = all
   private filterCategories: Set<string> = new Set()       // empty = all
+  private filterWallets: Set<string> = new Set()          // empty = all
+  private filterDateFrom: string | null = null            // YYYY-MM-DD; null = no lower bound
+  private filterDateTo: string | null = null              // YYYY-MM-DD; null = no upper bound
   private filterSearch: string = ''
   private catPanelOpen: boolean = false
+  private accountPanelOpen: boolean = false
 
   // Refs for lightweight list updates (search)
   private cachedTransactions: Transaction[] = []
@@ -23,7 +29,6 @@ export class DetailView extends ItemView {
   private listEl: HTMLElement | null = null
   private listWrapEl: HTMLElement | null = null
   private subtotalEl: HTMLElement | null = null
-  private _revealCleanup: (() => void) | null = null
 
   constructor(leaf: WorkspaceLeaf, walletFile: WalletFile) {
     super(leaf)
@@ -47,7 +52,6 @@ export class DetailView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
-    this.register(() => { this._revealCleanup?.() })
     await this.render()
   }
 
@@ -62,19 +66,32 @@ export class DetailView extends ItemView {
     contentEl.empty()
     contentEl.addClass('pw-detail')
 
-    this.cachedTransactions = (await this.walletFile.readMonth(this.currentYearMonth))
-      .sort((a, b) => {
-        const dateCompare = b.date.localeCompare(a.date)
-        if (dateCompare !== 0) return dateCompare
-        if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt)
-        return 0
-      })
+    await this.ensureCacheForCurrentFilter()
     this.cachedDp = this.walletFile.getConfig().decimalPlaces ?? 0
 
-    const header = contentEl.createDiv('pw-detail-header')
-    this.renderNavRow(header)
-    this.renderTypePills(header)
-    this.renderSearchInput(header)
+    renderSharedHeader(contentEl, {
+      view: this,
+      walletFile: this.walletFile,
+      activeView: 'detail',
+      yearMonth: this.currentYearMonth,
+      onMonthChange: (ym) => {
+        this.currentYearMonth = ym
+        this.filterCategories.clear()
+        this.filterDateFrom = null
+        this.filterDateTo = null
+        this.filterSearch = ''
+        void this.render()
+      },
+    })
+
+    const filtersWrap = contentEl.createDiv('pw-detail-header')
+    if (Platform.isMobile) {
+      this.renderSearchRow(filtersWrap, true)
+    } else {
+      this.renderTypePills(filtersWrap)
+      this.renderDateRangeRow(filtersWrap)
+      this.renderSearchRow(filtersWrap, false)
+    }
 
     const listWrap = contentEl.createDiv('pw-detail-list-wrap')
     this.listWrapEl = listWrap
@@ -85,36 +102,23 @@ export class DetailView extends ItemView {
     if (savedScroll > 0) listWrap.scrollTop = savedScroll
   }
 
-  private renderNavRow(header: HTMLElement): void {
-    const navRow = header.createDiv('pw-nav-row')
-    navRow.createEl('button', { text: '‹', cls: 'pw-nav-btn' }).addEventListener('click', () => {
-      this.currentYearMonth = stepMonth(this.currentYearMonth, -1)
-      this.filterCategories.clear()
-      this.filterSearch = ''
-      void this.render()
-    })
-    navRow.createEl('span', { text: this.currentYearMonth, cls: 'pw-month-label' })
-    const nextBtn = navRow.createEl('button', { text: '›', cls: 'pw-nav-btn' })
-    nextBtn.disabled = isAfterCurrentMonth(stepMonth(this.currentYearMonth, 1))
-    nextBtn.addEventListener('click', () => {
-      if (!nextBtn.disabled) {
-        this.currentYearMonth = stepMonth(this.currentYearMonth, 1)
-        this.filterCategories.clear()
-        this.filterSearch = ''
-        void this.render()
-      }
-    })
+  private async ensureCacheForCurrentFilter() {
+    this.cachedTransactions = (await this.walletFile.readMonth(this.currentYearMonth))
+      .sort((a, b) => {
+        const dateCompare = b.date.localeCompare(a.date)
+        if (dateCompare !== 0) return dateCompare
+        if (a.createdAt && b.createdAt) return b.createdAt.localeCompare(a.createdAt)
+        return 0
+      })
+  }
 
-    const addBtn = navRow.createEl('button', { text: '+ ' + t('ui.addTransaction'), cls: 'pw-action-btn' })
-    addBtn.addClass('pw-ml-auto')
-    addBtn.addEventListener('click', () => {
-      addBtn.disabled = true
-      const ModalClass = Platform.isMobile ? MobileTransactionModal : TransactionModal
-      new ModalClass(this.app, this.walletFile, {}, null, null,
-        () => (this.app.workspace as Events).trigger('penny-wallet:refresh'),
-        () => { addBtn.disabled = false },
-      ).open()
-    })
+  private getMonthDateDefaults(): { from: string; to: string } {
+    const [y, m] = this.currentYearMonth.split('-').map(Number)
+    const last = new Date(y, m, 0).getDate()
+    return {
+      from: `${this.currentYearMonth}-01`,
+      to: `${this.currentYearMonth}-${String(last).padStart(2, '0')}`,
+    }
   }
 
   private renderCategoryDropdown(container: HTMLElement): void {
@@ -144,6 +148,7 @@ export class DetailView extends ItemView {
     const updateToggleLabel = () => {
       const badge = this.filterCategories.size > 0 ? ` · ${this.filterCategories.size}` : ''
       catToggleBtn.setText(`${t('detail.filterCategory')}${badge} ${this.catPanelOpen ? '▴' : '▾'}`)
+      catToggleBtn.toggleClass('is-active', this.filterCategories.size > 0)
     }
     updateToggleLabel()
 
@@ -223,11 +228,10 @@ export class DetailView extends ItemView {
 
     const allTypePill = typePills.createEl('button', {
       text: t('detail.filterAll'),
-      cls: 'pw-pill' + (this.filterTypes.size === 0 ? ' is-active' : ''),
+      cls: 'pw-pill pw-pill-color-neutral' + (this.filterTypes.size === 0 ? ' is-active' : ''),
     })
     const allPillHandler = () => {
       this.filterTypes.clear()
-      this.filterCategories.clear()
       void this.render()
     }
     allTypePill.addEventListener('touchend', (e) => { e.preventDefault(); allPillHandler() })
@@ -241,7 +245,7 @@ export class DetailView extends ItemView {
     for (const opt of typeOptions) {
       const pill = typePills.createEl('button', {
         text: opt.label,
-        cls: 'pw-pill' + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
+        cls: `pw-pill pw-pill-color-${opt.value}` + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
       })
       const pillHandler = () => {
         if (this.filterTypes.has(opt.value)) {
@@ -249,7 +253,6 @@ export class DetailView extends ItemView {
         } else {
           this.filterTypes.add(opt.value)
         }
-        this.filterCategories.clear()
         void this.render()
       }
       pill.addEventListener('touchend', (e) => { e.preventDefault(); pillHandler() })
@@ -257,10 +260,13 @@ export class DetailView extends ItemView {
     }
 
     this.renderCategoryDropdown(typePills)
+    this.renderAccountDropdown(typePills)
   }
 
-  private renderSearchInput(header: HTMLElement): void {
-    const searchInput = header.createEl('input', {
+  private renderSearchRow(header: HTMLElement, includeFilterButton: boolean): void {
+    const row = header.createDiv('pw-detail-search-row')
+
+    const searchInput = row.createEl('input', {
       cls: 'pw-search-input',
       placeholder: t('detail.searchPlaceholder'),
     })
@@ -275,6 +281,373 @@ export class DetailView extends ItemView {
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') searchInput.blur()
     })
+
+    if (includeFilterButton) {
+      const activeCount = this.countActiveFilters()
+      const label = activeCount > 0
+        ? `${t('detail.filterButton')} (${activeCount}) ▾`
+        : `${t('detail.filterButton')} ▾`
+      const filterBtn = row.createEl('button', {
+        cls: 'pw-filter-btn' + (activeCount > 0 ? ' is-active' : ''),
+        text: label,
+      })
+      filterBtn.dataset['testid'] = 'detail-filter-btn'
+      filterBtn.addEventListener('click', () => this.openFilterSheet())
+    }
+  }
+
+  private countActiveFilters(): number {
+    let n = 0
+    if (this.filterTypes.size > 0) n++
+    if (this.filterCategories.size > 0) n++
+    if (this.filterWallets.size > 0) n++
+    if (this.filterDateFrom !== null) n++
+    if (this.filterDateTo !== null) n++
+    if (this.filterSearch !== '') n++
+    return n
+  }
+
+  private renderAccountDropdown(container: HTMLElement): void {
+    const wallets = this.walletFile.getConfig().wallets.filter(w => w.status === 'active')
+    if (wallets.length === 0) return
+
+    const dropdown = container.createDiv('pw-account-dropdown')
+
+    const toggleBtn = dropdown.createEl('button', { cls: 'pw-cat-toggle' })
+    const updateLabel = () => {
+      const arrow = this.accountPanelOpen ? '▴' : '▾'
+      const count = this.filterWallets.size
+      let text: string
+      if (count === 0) text = t('detail.filterAccount')
+      else if (count === 1) text = `${t('detail.filterAccount')}：${[...this.filterWallets][0]}`
+      else text = `${t('detail.filterAccount')} (${count})`
+      toggleBtn.setText(`${text} ${arrow}`)
+      toggleBtn.toggleClass('is-active', count > 0)
+    }
+    updateLabel()
+
+    const panel = dropdown.createDiv('pw-cat-panel')
+    if (!this.accountPanelOpen) panel.hide()
+
+    const onOutsideClick = (e: MouseEvent) => {
+      if (!dropdown.contains(e.target as Node)) {
+        this.accountPanelOpen = false
+        panel.hide()
+        updateLabel()
+        document.removeEventListener('click', onOutsideClick)
+      }
+    }
+    this.register(() => document.removeEventListener('click', onOutsideClick))
+
+    if (this.accountPanelOpen) document.addEventListener('click', onOutsideClick)
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      this.accountPanelOpen = !this.accountPanelOpen
+      if (this.accountPanelOpen) {
+        panel.show()
+        document.addEventListener('click', onOutsideClick)
+      } else {
+        panel.hide()
+        document.removeEventListener('click', onOutsideClick)
+      }
+      updateLabel()
+    })
+
+    // Multi-select: clicking an item toggles + refreshes panel without closing.
+    // Outside click closes the panel (handled above).
+    const buildPanelItems = () => {
+      panel.empty()
+
+      const allItem = panel.createDiv('pw-cat-item')
+      const allEmpty = this.filterWallets.size === 0
+      const allCheck = allItem.createEl('span', { cls: 'pw-cat-check' + (allEmpty ? ' is-checked' : '') })
+      if (allEmpty) allCheck.setText('✓')
+      allItem.createEl('span', { text: t('detail.filterAllAccounts') })
+      allItem.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.filterWallets.clear()
+        buildPanelItems()
+        updateLabel()
+        this.applyFilters()
+      })
+
+      for (const w of wallets) {
+        const item = panel.createDiv('pw-cat-item')
+        const isChecked = this.filterWallets.has(w.name)
+        const check = item.createEl('span', { cls: 'pw-cat-check' + (isChecked ? ' is-checked' : '') })
+        if (isChecked) check.setText('✓')
+        item.createEl('span', { text: w.name })
+        item.addEventListener('click', (e) => {
+          e.stopPropagation()
+          if (this.filterWallets.has(w.name)) this.filterWallets.delete(w.name)
+          else this.filterWallets.add(w.name)
+          buildPanelItems()
+          updateLabel()
+          this.applyFilters()
+        })
+      }
+    }
+    buildPanelItems()
+  }
+
+  private renderDateRangeRow(header: HTMLElement): void {
+    const row = header.createDiv('pw-detail-date-row')
+    const defaults = this.getMonthDateDefaults()
+
+    const fromInput = row.createEl('input', { cls: 'pw-date-input' })
+    fromInput.type = 'date'
+    fromInput.min = defaults.from
+    fromInput.max = defaults.to
+    fromInput.value = this.filterDateFrom ?? defaults.from
+    fromInput.dataset['testid'] = 'date-input-from'
+    fromInput.addEventListener('change', () => {
+      this.filterDateFrom = fromInput.value || null
+      void this.render()
+    })
+
+    row.createEl('span', { text: '─', cls: 'pw-date-sep' })
+
+    const toInput = row.createEl('input', { cls: 'pw-date-input' })
+    toInput.type = 'date'
+    toInput.min = defaults.from
+    toInput.max = defaults.to
+    toInput.value = this.filterDateTo ?? defaults.to
+    toInput.dataset['testid'] = 'date-input-to'
+    toInput.addEventListener('change', () => {
+      this.filterDateTo = toInput.value || null
+      void this.render()
+    })
+
+    const clearBtn = row.createEl('button', {
+      cls: 'pw-action-btn pw-clear-btn',
+      text: t('detail.filterClearAll'),
+    })
+    clearBtn.dataset['testid'] = 'detail-clear-filters'
+    clearBtn.addEventListener('click', () => this.clearAllFilters())
+  }
+
+  private clearAllFilters() {
+    this.filterTypes.clear()
+    this.filterCategories.clear()
+    this.filterWallets.clear()
+    this.filterDateFrom = null
+    this.filterDateTo = null
+    this.filterSearch = ''
+    void this.render()
+  }
+
+  private openFilterSheet(): void {
+    const snapshot = {
+      types: new Set(this.filterTypes),
+      categories: new Set(this.filterCategories),
+      wallets: new Set(this.filterWallets),
+      dateFrom: this.filterDateFrom,
+      dateTo: this.filterDateTo,
+      search: this.filterSearch,
+    }
+
+    let bodyEl: HTMLElement | null = null
+
+    const rerenderBody = () => {
+      if (!bodyEl) return
+      bodyEl.empty()
+      this.buildFilterSheetBody(bodyEl, rerenderBody)
+    }
+
+    openFilterSheet({
+      containerEl: this.containerEl,
+      title: t('detail.filterTitle'),
+      buildBody: (sheet) => {
+        bodyEl = sheet
+        this.buildFilterSheetBody(sheet, rerenderBody)
+      },
+      onCancel: () => {
+        this.filterTypes = snapshot.types
+        this.filterCategories = snapshot.categories
+        this.filterWallets = snapshot.wallets
+        this.filterDateFrom = snapshot.dateFrom
+        this.filterDateTo = snapshot.dateTo
+        this.filterSearch = snapshot.search
+      },
+      onDone: () => {},
+      onClose: () => { void this.render() },
+    })
+  }
+
+  private buildFilterSheetBody(sheet: HTMLElement, rerender: () => void): void {
+    // ── 類型 ──
+    {
+      const sec = sheet.createDiv('pw-filter-section')
+      sec.createDiv({ cls: 'pw-filter-label', text: t('detail.filterType') })
+      const group = sec.createDiv('pw-pill-group')
+
+      const allPill = group.createEl('button', {
+        cls: 'pw-pill pw-pill-color-neutral' + (this.filterTypes.size === 0 ? ' is-active' : ''),
+        text: t('detail.filterAll'),
+      })
+      const allHandler = () => {
+        this.filterTypes.clear()
+        rerender()
+        this.applyFilters()
+      }
+      allPill.addEventListener('touchend', (e) => { e.preventDefault(); allHandler() })
+      allPill.addEventListener('click', allHandler)
+
+      const typeOptions: { value: TransactionType; label: string }[] = [
+        { value: 'expense',  label: t('detail.filterExpense') },
+        { value: 'income',   label: t('detail.filterIncome') },
+        { value: 'transfer', label: t('detail.filterTransfer') },
+      ]
+      for (const opt of typeOptions) {
+        const pill = group.createEl('button', {
+          cls: `pw-pill pw-pill-color-${opt.value}` + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
+          text: opt.label,
+        })
+        const handler = () => {
+          if (this.filterTypes.has(opt.value)) this.filterTypes.delete(opt.value)
+          else this.filterTypes.add(opt.value)
+          rerender()
+          this.applyFilters()
+        }
+        pill.addEventListener('touchend', (e) => { e.preventDefault(); handler() })
+        pill.addEventListener('click', handler)
+      }
+    }
+
+    // ── 分類（依 type filter 動態調整來源）──
+    {
+      const catSource = this.cachedTransactions.filter(tx => {
+        if (this.filterTypes.size === 0) return tx.type === 'expense' || tx.type === 'income' || tx.type === 'transfer'
+        return this.filterTypes.has(tx.type)
+      })
+      const allCategories = new Set<string>()
+      catSource.forEach(tx => { if (tx.category) allCategories.add(tx.category) })
+      // 修剪掉已選但目前 type filter 下不存在的分類
+      for (const cat of this.filterCategories) {
+        if (!allCategories.has(cat)) this.filterCategories.delete(cat)
+      }
+
+      if (allCategories.size > 0) {
+        const sec = sheet.createDiv('pw-filter-section')
+        sec.createDiv({ cls: 'pw-filter-label', text: t('detail.filterCategory') })
+        const group = sec.createDiv('pw-pill-group')
+
+        const allPill = group.createEl('button', {
+          cls: 'pw-pill pw-pill-color-neutral' + (this.filterCategories.size === 0 ? ' is-active' : ''),
+          text: t('detail.filterAll'),
+        })
+        const allHandler = () => {
+          this.filterCategories.clear()
+          rerender()
+          this.applyFilters()
+        }
+        allPill.addEventListener('touchend', (e) => { e.preventDefault(); allHandler() })
+        allPill.addEventListener('click', allHandler)
+
+        for (const cat of allCategories) {
+          const isSelected = this.filterCategories.has(cat)
+          const pill = group.createEl('button', {
+            cls: 'pw-pill pw-pill-color-neutral' + (isSelected ? ' is-active' : ''),
+            text: translateCategory(cat),
+          })
+          const handler = () => {
+            if (this.filterCategories.has(cat)) this.filterCategories.delete(cat)
+            else this.filterCategories.add(cat)
+            rerender()
+            this.applyFilters()
+          }
+          pill.addEventListener('touchend', (e) => { e.preventDefault(); handler() })
+          pill.addEventListener('click', handler)
+        }
+      }
+    }
+
+    // ── 帳戶 ──
+    {
+      const wallets = this.walletFile.getConfig().wallets.filter(w => w.status === 'active')
+      if (wallets.length > 0) {
+        const sec = sheet.createDiv('pw-filter-section')
+        sec.createDiv({ cls: 'pw-filter-label', text: t('detail.filterAccount') })
+        const group = sec.createDiv('pw-pill-group')
+
+        const allPill = group.createEl('button', {
+          cls: 'pw-pill pw-pill-color-neutral' + (this.filterWallets.size === 0 ? ' is-active' : ''),
+          text: t('detail.filterAllAccounts'),
+        })
+        const allWalletHandler = () => {
+          this.filterWallets.clear()
+          rerender()
+          this.applyFilters()
+        }
+        allPill.addEventListener('touchend', (e) => { e.preventDefault(); allWalletHandler() })
+        allPill.addEventListener('click', allWalletHandler)
+
+        for (const w of wallets) {
+          const isSelected = this.filterWallets.has(w.name)
+          const colorKey = w.type === 'creditCard' ? 'credit' : w.type
+          const pill = group.createEl('button', {
+            cls: `pw-pill pw-pill-color-${colorKey}` + (isSelected ? ' is-active' : ''),
+            text: w.name,
+          })
+          const handler = () => {
+            if (this.filterWallets.has(w.name)) this.filterWallets.delete(w.name)
+            else this.filterWallets.add(w.name)
+            rerender()
+            this.applyFilters()
+          }
+          pill.addEventListener('touchend', (e) => { e.preventDefault(); handler() })
+          pill.addEventListener('click', handler)
+        }
+      }
+    }
+
+    // ── 日期範圍 ──
+    {
+      const sec = sheet.createDiv('pw-filter-section')
+      sec.createDiv({ cls: 'pw-filter-label', text: t('detail.filterDateRange') })
+
+      const row = sec.createDiv('pw-detail-date-row')
+      const defaults = this.getMonthDateDefaults()
+
+      const fromInput = row.createEl('input', { cls: 'pw-date-input' })
+      fromInput.type = 'date'
+      fromInput.min = defaults.from
+      fromInput.max = defaults.to
+      fromInput.value = this.filterDateFrom ?? defaults.from
+      fromInput.addEventListener('change', () => {
+        this.filterDateFrom = fromInput.value || null
+        this.applyFilters()
+      })
+
+      row.createEl('span', { text: '─', cls: 'pw-date-sep' })
+
+      const toInput = row.createEl('input', { cls: 'pw-date-input' })
+      toInput.type = 'date'
+      toInput.min = defaults.from
+      toInput.max = defaults.to
+      toInput.value = this.filterDateTo ?? defaults.to
+      toInput.addEventListener('change', () => {
+        this.filterDateTo = toInput.value || null
+        this.applyFilters()
+      })
+    }
+
+    // Clear-all button — pinned at bottom of body
+    const clearBtn = sheet.createEl('button', {
+      cls: 'pw-action-btn pw-filter-clear-all',
+      text: t('detail.filterClearAll'),
+    })
+    clearBtn.addEventListener('click', () => {
+      this.filterTypes.clear()
+      this.filterCategories.clear()
+      this.filterWallets.clear()
+      this.filterDateFrom = null
+      this.filterDateTo = null
+      this.filterSearch = ''
+      rerender()
+      this.applyFilters()
+    })
   }
 
   private applyFilters() {
@@ -283,6 +656,16 @@ export class DetailView extends ItemView {
     const filtered = this.cachedTransactions.filter(tx => {
       if (this.filterTypes.size > 0 && !this.filterTypes.has(tx.type)) return false
       if (this.filterCategories.size > 0 && !this.filterCategories.has(tx.category ?? '')) return false
+      if (this.filterWallets.size > 0
+       && !this.filterWallets.has(tx.wallet ?? '')
+       && !this.filterWallets.has(tx.fromWallet ?? '')
+       && !this.filterWallets.has(tx.toWallet ?? '')) return false
+      if (this.filterDateFrom || this.filterDateTo) {
+        const txDay = tx.date.split('/')[1] ?? ''
+        const txFullDate = `${this.currentYearMonth}-${txDay}`
+        if (this.filterDateFrom && txFullDate < this.filterDateFrom) return false
+        if (this.filterDateTo   && txFullDate > this.filterDateTo)   return false
+      }
       if (this.filterSearch) {
         const q = this.filterSearch.toLowerCase()
         const matchNote = tx.note?.toLowerCase().includes(q) ?? false
@@ -292,7 +675,6 @@ export class DetailView extends ItemView {
       return true
     })
 
-    this._revealCleanup?.()
     this.listEl.empty()
     if (filtered.length === 0) {
       this.listEl.createEl('p', { text: t('detail.noTransactions'), cls: 'pw-no-data' })
@@ -322,84 +704,43 @@ export class DetailView extends ItemView {
     const row = container.createDiv('pw-tx-row')
     row.dataset['testid'] = 'tx-row'
 
+    // col1: date (V-center, large)
     row.createEl('span', { text: tx.date, cls: 'pw-tx-date' })
 
+    // col2: type badge (V-center)
     row.createEl('span', {
       text: t(`type.${tx.type}`),
       cls: `pw-type-badge pw-type-${tx.type}`,
     })
 
-    const main = row.createDiv('pw-tx-main')
-
-    // Line 1: category + wallet
-    const top = main.createDiv('pw-tx-top')
-    const catText = translateCategory(tx.category ?? '')
-    top.createEl('span', { text: catText, cls: 'pw-tx-cat' })
-    const walletText = tx.wallet ?? (tx.fromWallet && tx.toWallet ? `${tx.fromWallet} → ${tx.toWallet}` : '—')
-    top.createEl('span', { text: walletText, cls: 'pw-tx-wallet' })
-
-    // Line 2: tags + note (only rendered if data exists)
-    if (tx.tags?.length || tx.note) {
-      const bottom = main.createDiv('pw-tx-bottom')
-      if (tx.tags?.length) {
-        const tagsEl = bottom.createSpan('pw-tx-tags')
-        for (const tag of tx.tags) {
-          const tagChip = tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
-          tagChip.dataset['testid'] = 'tx-tag-chip'
-          tagChip.dataset['tag'] = tag
-        }
-      }
-      if (tx.note) bottom.createEl('span', { text: tx.note, cls: 'pw-tx-note' })
-    }
-
-    const isRefund = tx.type === 'expense' && tx.amount < 0
-    const amountCls = isRefund ? 'pw-tx-amount is-refund'
-      : tx.type === 'income' ? 'pw-tx-amount is-income'
-      : tx.type === 'expense' ? 'pw-tx-amount is-expense'
-      : 'pw-tx-amount'
-    const amountPrefix = isRefund ? '+' : tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''
-    const displayAmount = isRefund ? -tx.amount : tx.amount
-    row.createEl('span', {
-      text: amountPrefix + formatAmount(displayAmount, dp),
-      cls: amountCls,
+    // col3: 3-row stack — category / wallet / tags-or-note
+    const stack = row.createDiv('pw-tx-row-stack')
+    stack.createEl('div', {
+      text: translateCategory(tx.category ?? ''),
+      cls: 'pw-tx-category',
     })
+    stack.createEl('div', { text: buildWalletText(tx), cls: 'pw-tx-wallet' })
 
-    const actions = row.createDiv('pw-tx-actions')
-
-    if (Platform.isMobile) {
-      let timer: ReturnType<typeof setTimeout> | null = null
-      row.addEventListener('touchstart', () => {
-        timer = setTimeout(() => {
-          this._revealCleanup?.()
-          row.addClass('is-revealed')
-          const onOutside = (ev: TouchEvent) => {
-            if (!row.contains(ev.target as Node)) {
-              row.removeClass('is-revealed')
-              document.removeEventListener('touchstart', onOutside)
-              this._revealCleanup = null
-            }
-          }
-          document.addEventListener('touchstart', onOutside)
-          this._revealCleanup = () => {
-            document.removeEventListener('touchstart', onOutside)
-            this._revealCleanup = null
-          }
-        }, 500)
-      }, { passive: true })
-      row.addEventListener('touchmove', () => {
-        if (timer) { clearTimeout(timer); timer = null }
-      }, { passive: true })
-      row.addEventListener('touchend', () => {
-        if (timer) { clearTimeout(timer); timer = null }
-      })
+    const line3 = stack.createDiv('pw-tx-row-line3')
+    const display = buildLine3Display(tx)
+    if (display.kind === 'tags') {
+      const tagsEl = line3.createSpan('pw-tx-tags')
+      for (const tag of display.tags) {
+        const chip = tagsEl.createSpan({ text: `#${tag}`, cls: 'pw-tx-tag-chip' })
+        chip.dataset['testid'] = 'tx-tag-chip'
+        chip.dataset['tag'] = tag
+      }
+    } else if (display.kind === 'note') {
+      line3.createEl('span', { text: display.text, cls: 'pw-tx-note' })
+    } else {
+      line3.createEl('span', { text: '—', cls: 'pw-tx-empty' })
     }
 
-    const editBtn = actions.createEl('button', { cls: 'pw-txn-btn' })
-    editBtn.setAttribute('aria-label', t('ui.edit'))
-    editBtn.dataset['action'] = 'edit'
-    setIcon(editBtn, 'pencil')
-    editBtn.addEventListener('click', () => {
-      editBtn.disabled = true
+    // col4: amount (V-center, large)
+    const amount = buildAmountDisplay(tx, dp)
+    row.createEl('span', { text: amount.text, cls: amount.className })
+
+    row.addEventListener('click', () => {
       const ModalClass = Platform.isMobile ? MobileTransactionModal : TransactionModal
       new ModalClass(
         this.app,
@@ -408,29 +749,8 @@ export class DetailView extends ItemView {
         tx,
         this.currentYearMonth,
         () => (this.app.workspace as Events).trigger('penny-wallet:refresh'),
-        () => { editBtn.disabled = false },
+        null,
       ).open()
     })
-
-    const deleteBtn = actions.createEl('button', { cls: 'pw-txn-btn pw-txn-btn-del' })
-    deleteBtn.setAttribute('aria-label', t('ui.delete'))
-    deleteBtn.dataset['action'] = 'delete'
-    setIcon(deleteBtn, 'trash')
-    deleteBtn.addEventListener('click', () => {
-      this.confirmDelete(tx)
-    })
-  }
-
-  private confirmDelete(tx: Transaction) {
-    const modal = new ConfirmModal(
-      this.app,
-      t('confirm.deleteTransaction'),
-      async () => {
-        await this.walletFile.deleteTransaction(tx, this.currentYearMonth)
-        new Notice(t('notice.transactionDeleted'));
-        (this.app.workspace as Events).trigger('penny-wallet:refresh')
-      },
-    )
-    modal.open()
   }
 }

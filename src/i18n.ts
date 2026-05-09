@@ -81,6 +81,14 @@ const translations = {
     'detail.noTransactions': '無符合條件的交易',
     'detail.searchPlaceholder': '搜尋備註/標籤...',
     'detail.filterCategory': '分類',
+    'detail.filterButton': '篩選',
+    'detail.filterTitle': '篩選',
+    'detail.filterType': '類型',
+    'detail.filterAccount': '帳戶',
+    'detail.filterAllAccounts': '全部帳戶',
+    'detail.filterDateRange': '日期範圍',
+    'detail.filterClearAll': '清除全部',
+    'detail.filterDone': '完成',
 
     // Trend view
     'trend.3m': '3 個月',
@@ -96,7 +104,6 @@ const translations = {
     // Transaction modal
     'modal.addTitle': '新增交易',
     'modal.editTitle': '編輯交易',
-    'modal.editingDate': '編輯 {date} 的交易',
     'modal.date': '日期',
     'modal.wallet': '帳戶',
     'modal.fromWallet': '轉出帳戶',
@@ -110,7 +117,6 @@ const translations = {
     'tagPicker.search': '搜尋或輸入新標籤',
     'tagPicker.addTag': '+ 新增標籤',
     'tagPicker.addNamed': '+ 新增「{name}」',
-    'tagPicker.alreadyExists': '「{name}」已存在',
     'tagPicker.noResults': '沒有包含「{searchTerm}」的標籤',
     'tagPicker.tagLimit': '已達標籤上限',
     'tagPicker.rowPlaceholder': '選擇標籤',
@@ -130,7 +136,6 @@ const translations = {
     'err.walletNameDuplicate': '錢包名稱已存在',
 
     // Settings
-    'settings.title': 'PennyWallet 設定',
     'settings.general': '一般設定',
     'settings.folderName': '資料夾名稱',
     'settings.folderNameDesc': '存放記帳檔案的資料夾（相對於 Vault 根目錄）',
@@ -157,10 +162,8 @@ const translations = {
 
     // Validation
     'validation.modalTitle': '資料驗算報告',
-    'validation.noIssues': '資料驗算完成，無任何問題。',
     'validation.fixAll': '全部修復',
     'validation.fix': '修復',
-    'validation.remap': '重新指定',
     'validation.remapTo': '改指向',
     'validation.frontmatterSection': 'Frontmatter 快取不一致',
     'validation.frontmatterDesc': '{month}：收入應為 {actualIncome}（現為 {storedIncome}），支出應為 {actualExpense}（現為 {storedExpense}）',
@@ -203,7 +206,6 @@ const translations = {
     'err.invalidDate': '日期格式無效',
     'err.fromMustNotBeCreditCard': '轉出帳戶不能是信用卡',
     'err.toMustBeCreditCard': '轉入帳戶必須是信用卡',
-    'err.mustBeCreditCard': '帳戶必須是信用卡',
 
     'ui.unarchive': '取消封存',
 
@@ -212,7 +214,6 @@ const translations = {
     'ui.asset': '資產',
     'ui.overview': '總覽',
     'asset.netAssetTrend': '淨資產趨勢',
-    'asset.savingsRate': '儲蓄率',
   },
   'en': {
     'type.expense': 'Expense',
@@ -285,6 +286,14 @@ const translations = {
     'detail.noTransactions': 'No matching transactions',
     'detail.searchPlaceholder': 'Search notes/tags...',
     'detail.filterCategory': 'Category',
+    'detail.filterButton': 'Filter',
+    'detail.filterTitle': 'Filter',
+    'detail.filterType': 'Type',
+    'detail.filterAccount': 'Account',
+    'detail.filterAllAccounts': 'All Accounts',
+    'detail.filterDateRange': 'Date Range',
+    'detail.filterClearAll': 'Clear All',
+    'detail.filterDone': 'Done',
 
     'trend.3m': '3 Months',
     'trend.6m': '6 Months',
@@ -297,7 +306,6 @@ const translations = {
 
     'modal.addTitle': 'Add Transaction',
     'modal.editTitle': 'Edit Transaction',
-    'modal.editingDate': 'Editing transaction from {date}',
     'modal.date': 'Date',
     'modal.wallet': 'Account',
     'modal.fromWallet': 'From Account',
@@ -311,7 +319,6 @@ const translations = {
     'tagPicker.search': 'Search or type a new tag',
     'tagPicker.addTag': '+ Add tag',
     'tagPicker.addNamed': '+ Add "{name}"',
-    'tagPicker.alreadyExists': '"{name}" already exists',
     'tagPicker.noResults': 'No tags containing "{searchTerm}"',
     'tagPicker.tagLimit': 'Tag limit reached',
     'tagPicker.rowPlaceholder': 'Select tags',
@@ -329,7 +336,6 @@ const translations = {
     'err.walletNameEmpty': 'Account name cannot be empty',
     'err.walletNameDuplicate': 'Account name already exists',
 
-    'settings.title': 'PennyWallet settings',
     'settings.general': 'General',
     'settings.folderName': 'Folder name',
     'settings.folderNameDesc': 'Folder to store penny-wallet files (relative to vault root)',
@@ -356,10 +362,8 @@ const translations = {
 
     // Validation
     'validation.modalTitle': 'Data validation report',
-    'validation.noIssues': 'Validation complete — no issues found.',
     'validation.fixAll': 'Fix all',
     'validation.fix': 'Fix',
-    'validation.remap': 'Remap',
     'validation.remapTo': 'Remap to',
     'validation.frontmatterSection': 'Frontmatter cache mismatch',
     'validation.frontmatterDesc': '{month}: income should be {actualIncome} (stored: {storedIncome}), expense should be {actualExpense} (stored: {storedExpense})',
@@ -397,7 +401,6 @@ const translations = {
     'err.invalidDate': 'Invalid date',
     'err.fromMustNotBeCreditCard': 'Source account cannot be a credit card',
     'err.toMustBeCreditCard': 'Target account must be a credit card',
-    'err.mustBeCreditCard': 'Account must be a credit card',
 
     'ui.unarchive': 'Unarchive',
 
@@ -406,7 +409,6 @@ const translations = {
     'ui.asset': 'Assets',
     'ui.overview': 'Overview',
     'asset.netAssetTrend': 'Net Asset Trend',
-    'asset.savingsRate': 'Savings Rate',
   },
 } as const
 

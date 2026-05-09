@@ -133,10 +133,13 @@ export function openTagPicker(params: TagPickerParams): () => void {
     for (const tag of visible) {
       const isSelected = staged.has(tag)
       const isDisabled = !isSelected && atLimit
-      const chip = chipArea.createEl('button', { cls: 'pw-tag-picker-chip', text: `#${tag}` })
+      const chip = chipArea.createEl('button', {
+        cls: 'pw-pill pw-pill-color-neutral',
+        text: `#${tag}`,
+      })
       chip.dataset['testid'] = 'tag-picker-chip'
       chip.dataset['tag'] = tag
-      chip.toggleClass('is-selected', isSelected)
+      chip.toggleClass('is-active', isSelected)
       chip.toggleClass('is-disabled', isDisabled)
 
       chip.addEventListener('click', () => {

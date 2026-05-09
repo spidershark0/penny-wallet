@@ -2,6 +2,21 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
+## [0.0.11] - 2026-05-09
+
+### Added
+- **Wallet filter multi-select** — both the mobile filter sheet and the desktop dropdown now accept multiple wallets
+
+### Changed
+- **Filter pill colorway** — type / category / wallet pills get a tinted active state (same-color border, same-color text, translucent same-color fill); neutral pill uses `--interactive-accent`; base size bumped to 14px to match the tag picker chip
+- **Pill family** — tag picker chips consolidate into the `.pw-pill` family; category pill active drops the trailing ✓ marker
+
+### Fixed
+- Dark theme filter pill active fill not rendering — `:root` declarations referencing `--interactive-accent` failed to resolve (Obsidian declares the token on `body`); moved the affected vars to `body`
+
+### Internal
+- Filled variant preserved as git tag `pill-style-filled` (commit `cda9093`) for one-shot switching
+
 ## [0.0.10] - 2026-05-06
 
 ### Added

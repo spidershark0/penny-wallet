@@ -5,6 +5,7 @@ import { dateToYearMonth } from '../utils'
 import { t } from '../i18n'
 import { parseAmountForEdit, getCategoryOptions as getCategoryOptionsFromState, validateTransactionForm, buildTransactionPayload, getTransferWalletCandidates, type TransactionFormState } from './transactionState'
 import { buildTagInput } from './TagInput'
+import { ConfirmModal } from './ConfirmModal'
 
 export class TransactionModal extends Modal {
   protected walletFile: WalletFile
@@ -32,6 +33,7 @@ export class TransactionModal extends Modal {
   protected errorEl!: HTMLElement
   private amountPrefixEl: HTMLElement | null = null
   private isConfirming = false
+  private isDeleting = false
 
   constructor(
     app: App,
@@ -114,6 +116,12 @@ export class TransactionModal extends Modal {
     this.errorEl.hide()
 
     const btnRow = contentEl.createDiv('pw-btn-row')
+    if (this.editingTx) {
+      const deleteBtn = btnRow.createEl('button', { text: t('ui.delete'), cls: 'pw-btn-delete' })
+      deleteBtn.dataset['action'] = 'delete'
+      deleteBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.handleDelete() })
+      deleteBtn.addEventListener('click', () => this.handleDelete())
+    }
     const confirmBtn = btnRow.createEl('button', { text: t('ui.confirm'), cls: 'mod-cta' })
     confirmBtn.dataset['action'] = 'confirm'
     const cancelBtn = btnRow.createEl('button', { text: t('ui.cancel') })
@@ -410,6 +418,27 @@ export class TransactionModal extends Modal {
       return false
     }
     return true
+  }
+
+  protected handleDelete(): void {
+    if (this.isDeleting) return
+    if (!this.editingTx || !this.editingYearMonth) return
+    const tx = this.editingTx
+    const ym = this.editingYearMonth
+    const confirm = new ConfirmModal(this.app, t('confirm.deleteTransaction'), async () => {
+      this.isDeleting = true
+      try {
+        await this.walletFile.deleteTransaction(tx, ym)
+        this.close()
+        this.onSuccess?.()
+        new Notice(t('notice.transactionDeleted'))
+      } catch (e) {
+        this.showError(String(e))
+      } finally {
+        this.isDeleting = false
+      }
+    })
+    confirm.open()
   }
 
   protected async handleConfirm() {

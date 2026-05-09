@@ -42,10 +42,15 @@ for token in income expense bank cash credit transfer payment; do
     || fail ".theme-light --pw-${token} missing base-derived override"
 done
 
+# Tint must be theme-adaptive: either color-mix with background-primary (solid blend),
+# or color-mix with transparent (semi-transparent overlay that adapts via underlying bg).
 for token in income expense bank credit transfer payment; do
-  echo "$light_block" | grep -q -- "--pw-${token}-tint:.*var(--background-primary)" \
-    && pass ".theme-light --pw-${token}-tint uses background-primary" \
-    || fail ".theme-light --pw-${token}-tint missing background-primary"
+  tint_line=$(echo "$light_block" | grep -- "--pw-${token}-tint:")
+  if echo "$tint_line" | grep -qE 'var\(--background-primary\)|transparent'; then
+    pass ".theme-light --pw-${token}-tint is theme-adaptive (bg-primary or transparent)"
+  else
+    fail ".theme-light --pw-${token}-tint missing theme-adaptive bg (need bg-primary or transparent)"
+  fi
 done
 
 # 3. .pw-metric-value has tabular-nums + size>=28 + weight>=600
@@ -91,7 +96,7 @@ else
 fi
 
 # 7. :focus-visible rules exist for required selectors
-for sel in pw-action-btn pw-nav-btn pw-pill pw-range-btn pw-txn-btn pw-cat-toggle; do
+for sel in pw-action-btn pw-nav-btn pw-pill pw-range-btn pw-cat-toggle; do
   if grep -qE "\.${sel}:focus-visible" "$CSS"; then
     pass ":focus-visible exists for .${sel}"
   else
