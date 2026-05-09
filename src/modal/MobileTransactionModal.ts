@@ -242,7 +242,7 @@ export class MobileTransactionModal extends TransactionModal {
         // Display-only chips that match the picker's selected style (oval, accent).
         // Tap anywhere on the row (chip or whitespace) opens the picker (B1).
         const chip = tagChipsEl.createSpan({
-          cls: 'pw-tag-picker-chip is-selected',
+          cls: 'pw-pill pw-pill-color-neutral is-active',
           text: `#${tag}`,
         })
         chip.dataset['testid'] = 'mobile-tag-chip'

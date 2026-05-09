@@ -16,7 +16,7 @@ export class DetailView extends ItemView {
   private currentYearMonth: string
   private filterTypes: Set<TransactionType> = new Set()   // empty = all
   private filterCategories: Set<string> = new Set()       // empty = all
-  private filterWallet: string | null = null              // null = all
+  private filterWallets: Set<string> = new Set()          // empty = all
   private filterDateFrom: string | null = null            // YYYY-MM-DD; null = no lower bound
   private filterDateTo: string | null = null              // YYYY-MM-DD; null = no upper bound
   private filterSearch: string = ''
@@ -228,7 +228,7 @@ export class DetailView extends ItemView {
 
     const allTypePill = typePills.createEl('button', {
       text: t('detail.filterAll'),
-      cls: 'pw-pill' + (this.filterTypes.size === 0 ? ' is-active' : ''),
+      cls: 'pw-pill pw-pill-color-neutral' + (this.filterTypes.size === 0 ? ' is-active' : ''),
     })
     const allPillHandler = () => {
       this.filterTypes.clear()
@@ -245,7 +245,7 @@ export class DetailView extends ItemView {
     for (const opt of typeOptions) {
       const pill = typePills.createEl('button', {
         text: opt.label,
-        cls: 'pw-pill' + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
+        cls: `pw-pill pw-pill-color-${opt.value}` + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
       })
       const pillHandler = () => {
         if (this.filterTypes.has(opt.value)) {
@@ -300,7 +300,7 @@ export class DetailView extends ItemView {
     let n = 0
     if (this.filterTypes.size > 0) n++
     if (this.filterCategories.size > 0) n++
-    if (this.filterWallet !== null) n++
+    if (this.filterWallets.size > 0) n++
     if (this.filterDateFrom !== null) n++
     if (this.filterDateTo !== null) n++
     if (this.filterSearch !== '') n++
@@ -315,11 +315,14 @@ export class DetailView extends ItemView {
 
     const toggleBtn = dropdown.createEl('button', { cls: 'pw-cat-toggle' })
     const updateLabel = () => {
-      const selected = this.filterWallet ?? ''
       const arrow = this.accountPanelOpen ? '▴' : '▾'
-      const text = selected ? `${t('detail.filterAccount')}：${selected}` : t('detail.filterAccount')
+      const count = this.filterWallets.size
+      let text: string
+      if (count === 0) text = t('detail.filterAccount')
+      else if (count === 1) text = `${t('detail.filterAccount')}：${[...this.filterWallets][0]}`
+      else text = `${t('detail.filterAccount')} (${count})`
       toggleBtn.setText(`${text} ${arrow}`)
-      toggleBtn.toggleClass('is-active', this.filterWallet !== null)
+      toggleBtn.toggleClass('is-active', count > 0)
     }
     updateLabel()
 
@@ -351,28 +354,41 @@ export class DetailView extends ItemView {
       updateLabel()
     })
 
-    const allItem = panel.createDiv('pw-cat-item')
-    const allCheck = allItem.createEl('span', { cls: 'pw-cat-check' + (this.filterWallet === null ? ' is-checked' : '') })
-    if (this.filterWallet === null) allCheck.setText('✓')
-    allItem.createEl('span', { text: t('detail.filterAllAccounts') })
-    allItem.addEventListener('click', () => {
-      this.filterWallet = null
-      this.accountPanelOpen = false
-      void this.render()
-    })
+    // Multi-select: clicking an item toggles + refreshes panel without closing.
+    // Outside click closes the panel (handled above).
+    const buildPanelItems = () => {
+      panel.empty()
 
-    for (const w of wallets) {
-      const item = panel.createDiv('pw-cat-item')
-      const isChecked = this.filterWallet === w.name
-      const check = item.createEl('span', { cls: 'pw-cat-check' + (isChecked ? ' is-checked' : '') })
-      if (isChecked) check.setText('✓')
-      item.createEl('span', { text: w.name })
-      item.addEventListener('click', () => {
-        this.filterWallet = w.name
-        this.accountPanelOpen = false
-        void this.render()
+      const allItem = panel.createDiv('pw-cat-item')
+      const allEmpty = this.filterWallets.size === 0
+      const allCheck = allItem.createEl('span', { cls: 'pw-cat-check' + (allEmpty ? ' is-checked' : '') })
+      if (allEmpty) allCheck.setText('✓')
+      allItem.createEl('span', { text: t('detail.filterAllAccounts') })
+      allItem.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.filterWallets.clear()
+        buildPanelItems()
+        updateLabel()
+        this.applyFilters()
       })
+
+      for (const w of wallets) {
+        const item = panel.createDiv('pw-cat-item')
+        const isChecked = this.filterWallets.has(w.name)
+        const check = item.createEl('span', { cls: 'pw-cat-check' + (isChecked ? ' is-checked' : '') })
+        if (isChecked) check.setText('✓')
+        item.createEl('span', { text: w.name })
+        item.addEventListener('click', (e) => {
+          e.stopPropagation()
+          if (this.filterWallets.has(w.name)) this.filterWallets.delete(w.name)
+          else this.filterWallets.add(w.name)
+          buildPanelItems()
+          updateLabel()
+          this.applyFilters()
+        })
+      }
     }
+    buildPanelItems()
   }
 
   private renderDateRangeRow(header: HTMLElement): void {
@@ -414,7 +430,7 @@ export class DetailView extends ItemView {
   private clearAllFilters() {
     this.filterTypes.clear()
     this.filterCategories.clear()
-    this.filterWallet = null
+    this.filterWallets.clear()
     this.filterDateFrom = null
     this.filterDateTo = null
     this.filterSearch = ''
@@ -425,7 +441,7 @@ export class DetailView extends ItemView {
     const snapshot = {
       types: new Set(this.filterTypes),
       categories: new Set(this.filterCategories),
-      wallet: this.filterWallet,
+      wallets: new Set(this.filterWallets),
       dateFrom: this.filterDateFrom,
       dateTo: this.filterDateTo,
       search: this.filterSearch,
@@ -449,7 +465,7 @@ export class DetailView extends ItemView {
       onCancel: () => {
         this.filterTypes = snapshot.types
         this.filterCategories = snapshot.categories
-        this.filterWallet = snapshot.wallet
+        this.filterWallets = snapshot.wallets
         this.filterDateFrom = snapshot.dateFrom
         this.filterDateTo = snapshot.dateTo
         this.filterSearch = snapshot.search
@@ -467,7 +483,7 @@ export class DetailView extends ItemView {
       const group = sec.createDiv('pw-pill-group')
 
       const allPill = group.createEl('button', {
-        cls: 'pw-pill' + (this.filterTypes.size === 0 ? ' is-active' : ''),
+        cls: 'pw-pill pw-pill-color-neutral' + (this.filterTypes.size === 0 ? ' is-active' : ''),
         text: t('detail.filterAll'),
       })
       const allHandler = () => {
@@ -485,7 +501,7 @@ export class DetailView extends ItemView {
       ]
       for (const opt of typeOptions) {
         const pill = group.createEl('button', {
-          cls: 'pw-pill' + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
+          cls: `pw-pill pw-pill-color-${opt.value}` + (this.filterTypes.has(opt.value) ? ' is-active' : ''),
           text: opt.label,
         })
         const handler = () => {
@@ -518,7 +534,7 @@ export class DetailView extends ItemView {
         const group = sec.createDiv('pw-pill-group')
 
         const allPill = group.createEl('button', {
-          cls: 'pw-pill' + (this.filterCategories.size === 0 ? ' is-active' : ''),
+          cls: 'pw-pill pw-pill-color-neutral' + (this.filterCategories.size === 0 ? ' is-active' : ''),
           text: t('detail.filterAll'),
         })
         const allHandler = () => {
@@ -532,8 +548,8 @@ export class DetailView extends ItemView {
         for (const cat of allCategories) {
           const isSelected = this.filterCategories.has(cat)
           const pill = group.createEl('button', {
-            cls: 'pw-pill' + (isSelected ? ' is-active' : ''),
-            text: translateCategory(cat) + (isSelected ? ' ✓' : ''),
+            cls: 'pw-pill pw-pill-color-neutral' + (isSelected ? ' is-active' : ''),
+            text: translateCategory(cat),
           })
           const handler = () => {
             if (this.filterCategories.has(cat)) this.filterCategories.delete(cat)
@@ -556,11 +572,11 @@ export class DetailView extends ItemView {
         const group = sec.createDiv('pw-pill-group')
 
         const allPill = group.createEl('button', {
-          cls: 'pw-pill' + (this.filterWallet === null ? ' is-active' : ''),
+          cls: 'pw-pill pw-pill-color-neutral' + (this.filterWallets.size === 0 ? ' is-active' : ''),
           text: t('detail.filterAllAccounts'),
         })
         const allWalletHandler = () => {
-          this.filterWallet = null
+          this.filterWallets.clear()
           rerender()
           this.applyFilters()
         }
@@ -568,13 +584,15 @@ export class DetailView extends ItemView {
         allPill.addEventListener('click', allWalletHandler)
 
         for (const w of wallets) {
-          const isSelected = this.filterWallet === w.name
+          const isSelected = this.filterWallets.has(w.name)
+          const colorKey = w.type === 'creditCard' ? 'credit' : w.type
           const pill = group.createEl('button', {
-            cls: 'pw-pill' + (isSelected ? ' is-active' : ''),
+            cls: `pw-pill pw-pill-color-${colorKey}` + (isSelected ? ' is-active' : ''),
             text: w.name,
           })
           const handler = () => {
-            this.filterWallet = isSelected ? null : w.name
+            if (this.filterWallets.has(w.name)) this.filterWallets.delete(w.name)
+            else this.filterWallets.add(w.name)
             rerender()
             this.applyFilters()
           }
@@ -623,7 +641,7 @@ export class DetailView extends ItemView {
     clearBtn.addEventListener('click', () => {
       this.filterTypes.clear()
       this.filterCategories.clear()
-      this.filterWallet = null
+      this.filterWallets.clear()
       this.filterDateFrom = null
       this.filterDateTo = null
       this.filterSearch = ''
@@ -638,10 +656,10 @@ export class DetailView extends ItemView {
     const filtered = this.cachedTransactions.filter(tx => {
       if (this.filterTypes.size > 0 && !this.filterTypes.has(tx.type)) return false
       if (this.filterCategories.size > 0 && !this.filterCategories.has(tx.category ?? '')) return false
-      if (this.filterWallet
-       && tx.wallet     !== this.filterWallet
-       && tx.fromWallet !== this.filterWallet
-       && tx.toWallet   !== this.filterWallet) return false
+      if (this.filterWallets.size > 0
+       && !this.filterWallets.has(tx.wallet ?? '')
+       && !this.filterWallets.has(tx.fromWallet ?? '')
+       && !this.filterWallets.has(tx.toWallet ?? '')) return false
       if (this.filterDateFrom || this.filterDateTo) {
         const txDay = tx.date.split('/')[1] ?? ''
         const txFullDate = `${this.currentYearMonth}-${txDay}`

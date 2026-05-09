@@ -34,6 +34,15 @@
   --pw-transfer-tint: color-mix(in srgb, var(--pw-transfer) 18%, transparent);
   --pw-payment-tint: color-mix(in srgb, var(--pw-payment) 18%, transparent);
 
+  /* Stronger tints — used by filter pill active state to win contrast against
+   * sheet/header backgrounds. Original tints stay 16-22% for chip/badge use. */
+  --pw-income-tint-strong:   color-mix(in srgb, var(--pw-income)   30%, transparent);
+  --pw-expense-tint-strong:  color-mix(in srgb, var(--pw-expense)  30%, transparent);
+  --pw-bank-tint-strong:     color-mix(in srgb, var(--pw-bank)     30%, transparent);
+  --pw-credit-tint-strong:   color-mix(in srgb, var(--pw-credit)   30%, transparent);
+  --pw-transfer-tint-strong: color-mix(in srgb, var(--pw-transfer) 30%, transparent);
+  --pw-cash-tint-strong:     color-mix(in srgb, var(--pw-cash)     30%, transparent);
+
   /* Card elevation */
   --pw-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   --pw-card-shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.12);
@@ -43,6 +52,14 @@
   --pw-shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.15);
   --pw-shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.4);
   --pw-shadow-overlay-above: 0 -4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Vars that depend on Obsidian theme tokens (--interactive-accent, --text-normal)
+ * must live on body, not :root — those tokens are declared on body and unreachable
+ * from :root, which makes the var() reference invalid (declaration becomes empty). */
+body {
+  --pw-neutral-tint: color-mix(in srgb, var(--text-normal) 18%, transparent);
+  --pw-accent-tint-strong: color-mix(in srgb, var(--interactive-accent) 30%, transparent);
 }
 
 .theme-light {
@@ -56,12 +73,22 @@
   --pw-payment: color-mix(in srgb, var(--pw-payment-base), black var(--pw-light-darken));
 
   /* Type color tints (badge backgrounds) — semi-transparent (see :root note) */
-  --pw-income-tint: color-mix(in srgb, var(--pw-income) 16%, transparent);
-  --pw-expense-tint: color-mix(in srgb, var(--pw-expense) 16%, transparent);
-  --pw-bank-tint: color-mix(in srgb, var(--pw-bank) 16%, transparent);
-  --pw-credit-tint: color-mix(in srgb, var(--pw-credit) 16%, transparent);
-  --pw-transfer-tint: color-mix(in srgb, var(--pw-transfer) 16%, transparent);
-  --pw-payment-tint: color-mix(in srgb, var(--pw-payment) 16%, transparent);
+  --pw-income-tint: color-mix(in srgb, var(--pw-income) 22%, transparent);
+  --pw-expense-tint: color-mix(in srgb, var(--pw-expense) 22%, transparent);
+  --pw-bank-tint: color-mix(in srgb, var(--pw-bank) 22%, transparent);
+  --pw-credit-tint: color-mix(in srgb, var(--pw-credit) 22%, transparent);
+  --pw-transfer-tint: color-mix(in srgb, var(--pw-transfer) 22%, transparent);
+  --pw-payment-tint: color-mix(in srgb, var(--pw-payment) 22%, transparent);
+  --pw-neutral-tint: color-mix(in srgb, var(--text-normal) 22%, transparent);
+
+  /* Stronger tints — light theme override (32% vs dark 28%) */
+  --pw-income-tint-strong:   color-mix(in srgb, var(--pw-income)   60%, transparent);
+  --pw-expense-tint-strong:  color-mix(in srgb, var(--pw-expense)  60%, transparent);
+  --pw-bank-tint-strong:     color-mix(in srgb, var(--pw-bank)     60%, transparent);
+  --pw-credit-tint-strong:   color-mix(in srgb, var(--pw-credit)   60%, transparent);
+  --pw-transfer-tint-strong: color-mix(in srgb, var(--pw-transfer) 60%, transparent);
+  --pw-cash-tint-strong:     color-mix(in srgb, var(--pw-cash)     60%, transparent);
+  --pw-accent-tint-strong:   color-mix(in srgb, var(--interactive-accent) 60%, transparent);
 
   /* Refund: mix ratio stays legible on light background */
   --pw-refund: color-mix(in srgb, var(--pw-income) 80%, var(--background-primary) 20%);
@@ -1542,16 +1569,20 @@ button.pw-mobile-delete-row:active {
   border-color: var(--interactive-accent);
 }
 
-/* Filter tabs (pill-shaped buttons for transaction type filtering) */
+/* Filter tabs (pill-shaped buttons for transaction type filtering)
+ * Color via modifier class .pw-pill-color-<key>:
+ *   sets --pw-pill-color (border + text active)
+ *   sets --pw-pill-tint  (background active)
+ * Base rule below reads both. */
 .pw-pill {
   background: none;
   border: 0.5px solid var(--background-modifier-border-hover);
-  border-radius: 99px;
-  padding: 4px 11px;
-  font-size: 11px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
   cursor: pointer;
   color: var(--text-muted);
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
 }
 
 .pw-pill-sm {
@@ -1559,26 +1590,42 @@ button.pw-mobile-delete-row:active {
   font-size: 10px;
 }
 
+/* Color modifiers — set the two vars consumed below.
+ * Active uses *-tint-strong (28-32%) for adequate contrast against sheet
+ * panels; chip/badge consumers stick with the regular *-tint (16-22%).
+ * Neutral pill uses --interactive-accent so dark/light themes both look
+ * coherent (raw --text-normal tint reads as white-fog in dark, black-fog
+ * in light — visually inconsistent). */
+.pw-pill-color-income    { --pw-pill-color: var(--pw-income);            --pw-pill-tint: var(--pw-income-tint-strong); }
+.pw-pill-color-expense   { --pw-pill-color: var(--pw-expense);           --pw-pill-tint: var(--pw-expense-tint-strong); }
+.pw-pill-color-transfer  { --pw-pill-color: var(--pw-transfer);          --pw-pill-tint: var(--pw-transfer-tint-strong); }
+.pw-pill-color-bank      { --pw-pill-color: var(--pw-bank);              --pw-pill-tint: var(--pw-bank-tint-strong); }
+.pw-pill-color-cash      { --pw-pill-color: var(--pw-cash);              --pw-pill-tint: var(--pw-cash-tint-strong); }
+.pw-pill-color-credit    { --pw-pill-color: var(--pw-credit);            --pw-pill-tint: var(--pw-credit-tint-strong); }
+.pw-pill-color-neutral   { --pw-pill-color: var(--interactive-accent);   --pw-pill-tint: var(--pw-accent-tint-strong); }
+
+/* Hover (only when not active) — 8% same-color tint as a pre-active hint */
 .pw-pill:hover:not(.is-active) {
-  background: var(--background-secondary);
+  background: color-mix(in srgb, var(--pw-pill-color, var(--text-normal)) 8%, transparent);
 }
 
+/* Active — tint background + same-color border + same-color text */
 .pw-pill.is-active {
-  background: var(--text-normal);
-  color: var(--background-primary);
-  border-color: var(--text-normal);
+  background: var(--pw-pill-tint, var(--background-secondary));
+  border-color: var(--pw-pill-color, var(--text-normal));
+  color: var(--pw-pill-color, var(--text-normal));
 }
 
 /* iOS sticky :active fix — prevent Obsidian global button styles from overriding */
 .pw-pill:active:not(.is-active) {
-  background: var(--background-secondary) !important;
+  background: color-mix(in srgb, var(--pw-pill-color, var(--text-normal)) 8%, transparent) !important;
   color: var(--text-muted) !important;
 }
 
 .pw-pill.is-active:active {
-  background: var(--text-normal) !important;
-  color: var(--background-primary) !important;
-  border-color: var(--text-normal) !important;
+  background: var(--pw-pill-tint, var(--background-secondary)) !important;
+  border-color: var(--pw-pill-color, var(--text-normal)) !important;
+  color: var(--pw-pill-color, var(--text-normal)) !important;
 }
 
 .pw-search-input {
@@ -1705,12 +1752,6 @@ button.pw-mobile-delete-row:active {
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
-}
-
-/* Pills inside filter sheet body — switch hover/active bg to primary against secondary panel */
-.pw-filter-sheet-body .pw-pill:hover:not(.is-active),
-.pw-filter-sheet-body .pw-pill:active:not(.is-active) {
-  background: var(--background-primary) !important;
 }
 
 /* Date inputs inside filter sheet body — match desktop input style */
