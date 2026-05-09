@@ -123,7 +123,7 @@ export class DashboardView extends ItemView {
 
   private async openDetailWithFilter(type: TransactionType, category: string) {
     await this.openOrRevealView(DETAIL_VIEW_TYPE, {
-      state: { yearMonth: this.currentYearMonth, filterType: type, filterCategory: category },
+      state: { yearMonth: this.currentYearMonth, filterType: type, filterCategory: category, resetFilters: true },
     })
   }
 
