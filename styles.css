@@ -166,6 +166,8 @@ canvas {
   max-height: 100% !important;
   border-radius: 0 !important;
   padding: 0 !important;
+  display: flex;
+  flex-direction: column;
 }
 
 .pw-transaction-modal-container .modal-close-button {
@@ -185,7 +187,8 @@ canvas {
 .pw-mobile-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -193,9 +196,9 @@ canvas {
 .pw-mobile-top-bar {
   display: flex;
   align-items: center;
-  padding: env(safe-area-inset-top, 0px) 8px 6px;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px 6px;
   min-height: 44px;
-  max-height: calc(48px + env(safe-area-inset-top, 0px));
+  max-height: calc(56px + env(safe-area-inset-top, 0px));
   flex-shrink: 0;
   border-bottom: 1px solid var(--background-modifier-border);
 }
@@ -352,6 +355,7 @@ canvas {
 .pw-mobile-rows {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: 16px;
 }
 
 .pw-mobile-row {

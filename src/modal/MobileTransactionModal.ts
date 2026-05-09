@@ -27,13 +27,22 @@ export class MobileTransactionModal extends TransactionModal {
     contentEl.addClass('pw-mobile-content')
     containerEl.addClass('pw-transaction-modal-container')
 
-    // Top bar: ✕ | title | ✓
-    const topBar = contentEl.createDiv('pw-mobile-top-bar')
+    // Remove Obsidian native header elements (titleEl on desktop, modal-header on mobile)
+    this.titleEl.remove()
+    this.modalEl.querySelector('.modal-header')?.remove()
+
+    // Toolbar in modal header position (sibling of contentEl, before it)
+    const topBar = createDiv('pw-mobile-top-bar')
+    this.modalEl.insertBefore(topBar, contentEl)
     const cancelBtn = topBar.createEl('button', { cls: 'pw-mobile-top-btn', text: '✕' })
-    topBar.createEl('span', {
+    const titleEl = topBar.createEl('span', {
       cls: 'pw-mobile-top-title',
       text: this.editingTx ? t('modal.editTitle') : t('modal.addTitle'),
     })
+    if (this.editingTx) {
+      const iconEl = titleEl.createSpan('pw-modal-title-icon')
+      setIcon(iconEl, 'pencil')
+    }
     const confirmBtn = topBar.createEl('button', {
       cls: 'pw-mobile-top-btn pw-mobile-top-confirm',
       text: '✓',
@@ -44,14 +53,6 @@ export class MobileTransactionModal extends TransactionModal {
     let confirmTouched = false
     confirmBtn.addEventListener('touchend', (e) => { e.preventDefault(); confirmTouched = true; void this.handleConfirm() })
     confirmBtn.addEventListener('click', () => { if (confirmTouched) { confirmTouched = false; return } void this.handleConfirm() })
-
-    if (this.editingTx) {
-      const titleEl = topBar.querySelector<HTMLElement>('.pw-mobile-top-title')
-      if (titleEl) {
-        const iconEl = titleEl.createSpan('pw-modal-title-icon')
-        setIcon(iconEl, 'pencil')
-      }
-    }
 
     // Type tabs
     this.mobileTabsEl = contentEl.createDiv('pw-mobile-tabs')
@@ -66,21 +67,9 @@ export class MobileTransactionModal extends TransactionModal {
     this.errorEl = contentEl.createDiv('pw-error pw-mobile-error')
     this.errorEl.hide()
 
-    // Field rows
+    // Field rows (delete row appended inside renderMobileRows when editing)
     this.mobileRowsEl = contentEl.createDiv('pw-mobile-rows')
     this.renderMobileRows(config)
-
-    // Delete row (edit mode only) — last row inside fields area
-    if (this.editingTx) {
-      const deleteBtn = this.mobileRowsEl.createEl('button', {
-        cls: 'pw-mobile-row pw-mobile-delete-row',
-        text: t('ui.delete'),
-      })
-      deleteBtn.dataset['action'] = 'delete'
-      let deleteTouched = false
-      deleteBtn.addEventListener('touchend', (e) => { e.preventDefault(); deleteTouched = true; this.handleDelete() })
-      deleteBtn.addEventListener('click', () => { if (deleteTouched) { deleteTouched = false; return } this.handleDelete() })
-    }
 
     // Numpad
     const numpadEl = contentEl.createDiv('pw-mobile-numpad')
@@ -276,6 +265,18 @@ export class MobileTransactionModal extends TransactionModal {
     noteInput.setAttribute('enterkeyhint', 'done')
     noteInput.addEventListener('input', () => { this.note = noteInput.value })
     noteInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') noteInput.blur() })
+
+    // Delete row (edit mode only) — last row, re-rendered with rows so it survives type switches
+    if (this.editingTx) {
+      const deleteBtn = this.mobileRowsEl.createEl('button', {
+        cls: 'pw-mobile-row pw-mobile-delete-row',
+        text: t('ui.delete'),
+      })
+      deleteBtn.dataset['action'] = 'delete'
+      let deleteTouched = false
+      deleteBtn.addEventListener('touchend', (e) => { e.preventDefault(); deleteTouched = true; this.handleDelete() })
+      deleteBtn.addEventListener('click', () => { if (deleteTouched) { deleteTouched = false; return } this.handleDelete() })
+    }
   }
 
   private addMobilePickerRow(
