@@ -6,11 +6,22 @@ import { formatMobileHeroAmount } from '../utils'
 import { getTransferWalletCandidates } from './transactionState'
 import { openBottomSheetPicker, type BottomSheetOption } from './BottomSheetPicker'
 import { openTagPicker } from './TagPicker'
+import { MobileCalculatorPad } from './MobileCalculatorPad'
+import {
+  createMobileCalculatorState,
+  pressMobileCalculatorKey,
+  type MobileCalculatorKey,
+  type MobileCalculatorState,
+} from './mobileCalculatorState'
 
 export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
   private mobileRowsEl!: HTMLElement
   private mobileAmountEl!: HTMLElement
+  private mobileAmountFormulaEl!: HTMLElement
+  private mobileCalculatorState: MobileCalculatorState = createMobileCalculatorState()
+  private mobileCalculatorPad: MobileCalculatorPad | null = null
+  private mobileDecimalPlaces = 0
   private viewportCleanups: (() => void)[] = []
 
   onOpen() {
@@ -59,7 +70,18 @@ export class MobileTransactionModal extends TransactionModal {
 
     // Amount display
     const amountArea = contentEl.createDiv('pw-mobile-amount-area')
+    amountArea.setAttribute('role', 'button')
+    amountArea.tabIndex = 0
+    amountArea.addEventListener('click', () => this.openCalculatorPad())
+    amountArea.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      e.preventDefault()
+      this.openCalculatorPad()
+    })
     this.mobileAmountEl = amountArea.createDiv('pw-mobile-amount-display')
+    this.mobileAmountFormulaEl = amountArea.createDiv('pw-mobile-amount-formula')
+    this.mobileDecimalPlaces = config.decimalPlaces
+    this.mobileCalculatorState = createMobileCalculatorState(this.amount, this.mobileDecimalPlaces)
     this.updateAmountDisplay()
 
     // Error
@@ -69,22 +91,6 @@ export class MobileTransactionModal extends TransactionModal {
     // Field rows
     this.mobileRowsEl = contentEl.createDiv('pw-mobile-rows')
     this.renderMobileRows(config)
-
-    // Delete row (edit mode only) — last row inside fields area
-    if (this.editingTx) {
-      const deleteBtn = this.mobileRowsEl.createEl('button', {
-        cls: 'pw-mobile-row pw-mobile-delete-row',
-        text: t('ui.delete'),
-      })
-      deleteBtn.dataset['action'] = 'delete'
-      let deleteTouched = false
-      deleteBtn.addEventListener('touchend', (e) => { e.preventDefault(); deleteTouched = true; this.handleDelete() })
-      deleteBtn.addEventListener('click', () => { if (deleteTouched) { deleteTouched = false; return } this.handleDelete() })
-    }
-
-    // Numpad
-    const numpadEl = contentEl.createDiv('pw-mobile-numpad')
-    this.renderMobileNumpad(numpadEl)
 
     this.bindMobileTextFocusState()
   }
@@ -251,6 +257,7 @@ export class MobileTransactionModal extends TransactionModal {
     }
 
     tagChipsEl.addEventListener('click', () => {
+      this.closeCalculatorPad()
       openTagPicker({
         containerEl: this.contentEl,
         walletFile: this.walletFile,
@@ -274,8 +281,36 @@ export class MobileTransactionModal extends TransactionModal {
     })
     noteInput.value = this.note
     noteInput.setAttribute('enterkeyhint', 'done')
+    noteInput.addEventListener('focus', () => this.closeCalculatorPad())
     noteInput.addEventListener('input', () => { this.note = noteInput.value })
     noteInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') noteInput.blur() })
+
+    this.renderMobileDeleteRow()
+  }
+
+  private renderMobileDeleteRow() {
+    if (!this.editingTx) return
+    const deleteWrap = this.mobileRowsEl.createDiv('pw-mobile-danger-zone')
+    const deleteBtn = deleteWrap.createEl('button', {
+      cls: 'pw-mobile-row pw-mobile-delete-row',
+      text: t('ui.delete'),
+    })
+    deleteBtn.dataset['action'] = 'delete'
+    let deleteTouched = false
+    deleteBtn.addEventListener('touchend', (e) => {
+      e.preventDefault()
+      deleteTouched = true
+      this.closeCalculatorPad()
+      this.handleDelete()
+    })
+    deleteBtn.addEventListener('click', () => {
+      if (deleteTouched) {
+        deleteTouched = false
+        return
+      }
+      this.closeCalculatorPad()
+      this.handleDelete()
+    })
   }
 
   private addMobilePickerRow(
@@ -290,7 +325,12 @@ export class MobileTransactionModal extends TransactionModal {
     const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
     const picker = buildPicker(valueEl)
     row.appendChild(picker)
-    if (onRowClick) row.addEventListener('click', onRowClick)
+    if (onRowClick) {
+      row.addEventListener('click', () => {
+        this.closeCalculatorPad()
+        onRowClick()
+      })
+    }
     return row
   }
 
@@ -311,6 +351,7 @@ export class MobileTransactionModal extends TransactionModal {
     const valueEl = row.createEl('span', { cls: 'pw-mobile-row-value', text: initialValue })
 
     const openPicker = () => {
+      this.closeCalculatorPad()
       openBottomSheetPicker({
         containerEl: this.contentEl,
         title: label,
@@ -337,98 +378,35 @@ export class MobileTransactionModal extends TransactionModal {
     return [{ key: '', label: '—' }, ...options]
   }
 
-  private renderMobileNumpad(el: HTMLElement) {
-    // Layout (4 cols):
-    //  7   8   9   ⌫
-    //  4   5   6   C
-    //  1   2   3   ✓  ← ✓ spans rows 3–4
-    //  .   0   00
-    const topKeys = ['7', '8', '9', '⌫', '4', '5', '6', 'C', '1', '2', '3']
-    const bottomKeys = ['.', '0', '00']
-
-    for (const key of topKeys) {
-      const btn = el.createEl('button', { cls: 'pw-mobile-numpad-btn', text: key })
-      if (key === '⌫' || key === 'C') btn.addClass('pw-mobile-numpad-control')
-      this.bindNumpadButton(btn, key)
-    }
-
-    // ✓ spans rows 3–4 at col 4 (handled via CSS class)
-    const confirmBtn = el.createEl('button', {
-      cls: 'pw-mobile-numpad-btn pw-mobile-numpad-confirm',
-      text: '✓',
-    })
-    this.bindNumpadButton(confirmBtn, '✓')
-
-    for (const key of bottomKeys) {
-      const btn = el.createEl('button', { cls: 'pw-mobile-numpad-btn', text: key })
-      this.bindNumpadButton(btn, key)
-    }
-  }
-
-  private bindNumpadButton(btn: HTMLButtonElement, key: string) {
-    let touched = false
-    let clearPressedTimer: number | null = null
-    const clearFocus = () => requestAnimationFrame(() => btn.blur())
-    const setPressed = () => {
-      if (clearPressedTimer !== null) {
-        window.clearTimeout(clearPressedTimer)
-        clearPressedTimer = null
-      }
-      btn.classList.add('is-pressed')
-    }
-    const clearPressed = () => {
-      btn.classList.remove('is-pressed')
-      clearFocus()
-    }
-    const scheduleClearPressed = () => {
-      if (clearPressedTimer !== null) window.clearTimeout(clearPressedTimer)
-      clearPressedTimer = window.setTimeout(() => {
-        clearPressedTimer = null
-        clearPressed()
-      }, 90)
-    }
-
-    btn.addEventListener('touchstart', setPressed, { passive: true })
-    btn.addEventListener('pointerdown', setPressed)
-    btn.addEventListener('pointerup', scheduleClearPressed)
-    btn.addEventListener('pointercancel', clearPressed)
-    btn.addEventListener('pointerleave', clearPressed)
-    btn.addEventListener('touchcancel', clearPressed)
-    btn.addEventListener('touchend', (e) => {
-      e.preventDefault()
-      touched = true
-      this.handleNumpadKey(key)
-      scheduleClearPressed()
-    })
-    btn.addEventListener('click', () => {
-      if (touched) {
-        touched = false
-        return
-      }
-      this.handleNumpadKey(key)
-      scheduleClearPressed()
-    })
-  }
-
-  private handleNumpadKey(key: string) {
+  private openCalculatorPad() {
     this.clearError()
-    if (key === '✓') { void this.handleConfirm(); return }
-    if (key === 'C') { this.amount = ''; this.updateAmountDisplay(); return }
-    if (key === '⌫') { this.amount = this.amount.slice(0, -1); this.updateAmountDisplay(); return }
-    if (key === '.') {
-      if (this.amount.includes('.')) return
-      if (this.amount === '') this.amount = '0'
-      this.amount += '.'
-      this.updateAmountDisplay()
-      return
+    if (this.mobileCalculatorPad) return
+    this.mobileCalculatorState = {
+      ...this.mobileCalculatorState,
+      amountValue: this.amount,
+      decimalPlaces: this.mobileDecimalPlaces,
     }
-    if (key === '00') {
-      if (this.amount === '' || this.amount === '0') return
-      this.amount += '00'
-      this.updateAmountDisplay()
-      return
-    }
-    this.amount = this.amount === '0' ? key : this.amount + key
+    this.contentEl.addClass('pw-mobile-calculator-active')
+    this.mobileCalculatorPad = new MobileCalculatorPad({
+      parentEl: this.contentEl,
+      initialState: this.mobileCalculatorState,
+      onKey: (key) => this.handleCalculatorKey(key),
+    })
+    this.updateAmountDisplay()
+  }
+
+  private closeCalculatorPad() {
+    if (!this.mobileCalculatorPad) return
+    this.mobileCalculatorPad.remove()
+    this.mobileCalculatorPad = null
+    this.contentEl.removeClass('pw-mobile-calculator-active')
+  }
+
+  private handleCalculatorKey(key: MobileCalculatorKey) {
+    this.clearError()
+    this.mobileCalculatorState = pressMobileCalculatorKey(this.mobileCalculatorState, key)
+    this.amount = this.mobileCalculatorState.amountValue
+    this.mobileCalculatorPad?.update(this.mobileCalculatorState)
     this.updateAmountDisplay()
   }
 
@@ -437,19 +415,36 @@ export class MobileTransactionModal extends TransactionModal {
     const isEmpty = this.amount === ''
     this.mobileAmountEl.textContent = formatMobileHeroAmount(this.amount, this.isRefund)
     this.mobileAmountEl.toggleClass('is-empty', isEmpty)
+
+    if (this.mobileAmountFormulaEl) {
+      this.mobileAmountFormulaEl.textContent = this.mobileCalculatorState.expressionText
+      this.mobileAmountFormulaEl.toggleClass('is-visible', this.mobileCalculatorState.expressionText !== '')
+      this.mobileAmountFormulaEl.toggleClass('is-warning', this.mobileCalculatorState.isPendingExpression)
+    }
   }
 
   private formatMobileDate(): string {
     return this.date.replace(/-/g, '/')
   }
 
+  protected async handleConfirm() {
+    if (this.mobileCalculatorState.submitBlocker) {
+      this.showError(t(this.mobileCalculatorState.submitBlocker))
+      return
+    }
+    await super.handleConfirm()
+  }
+
   onClose() {
+    this.mobileCalculatorPad?.remove()
+    this.mobileCalculatorPad = null
     this.viewportCleanups.forEach(fn => fn())
     this.viewportCleanups = []
     document.body.removeClass('pw-bottom-sheet-lock')
     this.containerEl.removeClass('pw-transaction-modal-container')
     this.contentEl.removeClass('pw-bottom-sheet-active')
     this.contentEl.removeClass('pw-mobile-text-focus')
+    this.contentEl.removeClass('pw-mobile-calculator-active')
     super.onClose()
   }
 }
