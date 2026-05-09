@@ -187,6 +187,7 @@ canvas {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  position: relative;
 }
 
 /* Top bar — safe area handled via padding-top only; height is auto to avoid double-offset */
@@ -322,6 +323,12 @@ canvas {
   text-align: center;
   flex-shrink: 0;
   border-bottom: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pw-mobile-amount-area:active {
+  background: var(--background-modifier-hover);
 }
 
 .pw-mobile-amount-display {
@@ -337,6 +344,24 @@ canvas {
 
 .pw-mobile-amount-display.is-empty {
   color: var(--text-muted);
+}
+
+.pw-mobile-amount-formula {
+  display: none;
+  min-height: 18px;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pw-mobile-amount-formula.is-visible {
+  display: block;
+}
+
+.pw-mobile-amount-formula.is-warning {
+  color: var(--text-warning);
 }
 
 /* Error in mobile modal */
@@ -455,13 +480,6 @@ canvas {
 
 .pw-mobile-note-input::placeholder {
   color: var(--text-faint);
-}
-
-/* Hide numpad when note field is focused (iOS keyboard replaces it) */
-.pw-mobile-rows:has(.pw-mobile-note-input:focus) ~ .pw-mobile-numpad,
-.pw-mobile-content.pw-mobile-text-focus .pw-mobile-numpad,
-.pw-mobile-content.pw-bottom-sheet-active .pw-mobile-numpad {
-  display: none;
 }
 
 /* iOS WKWebView doesn't shrink viewport when keyboard rises; pad the scroll
@@ -759,6 +777,12 @@ body.pw-bottom-sheet-lock {
 }
 
 /* Mobile delete row (edit mode only) — last row inside fields area */
+.pw-mobile-danger-zone {
+  margin-top: 24px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
 button.pw-mobile-delete-row {
   width: 100%;
   justify-content: center;
@@ -778,83 +802,70 @@ button.pw-mobile-delete-row:active {
   background: rgba(var(--color-red-rgb), 0.08);
 }
 
-/* Custom numpad — gap:1px uses the grid background as hairline dividers between cells.
-   No border-top needed: the top hairline comes from the grid gap itself. */
-.pw-mobile-numpad {
+.pw-mobile-content.pw-mobile-calculator-active .pw-mobile-rows {
+  padding-bottom: calc(306px + env(safe-area-inset-bottom, 0px));
+}
+
+.pw-mobile-calculator-pad {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  background: var(--background-primary);
+  border-top: 1px solid var(--background-modifier-border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pw-mobile-calculator-error {
+  display: none;
+  min-height: 28px;
+  padding: 6px 16px;
+  color: var(--text-error);
+  font-size: 12px;
+  line-height: 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pw-mobile-calculator-error.is-visible {
+  display: block;
+}
+
+.pw-mobile-calculator-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background: var(--background-modifier-border);
-  flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.pw-mobile-numpad-btn {
-  background: var(--interactive-normal);
-  border-radius: 0;
+.pw-mobile-calculator-btn {
+  height: 54px;
   border: none;
-  font-size: 22px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 0;
+  background: var(--interactive-normal);
   color: var(--text-normal);
+  font-size: 22px;
+  box-shadow: none;
   -webkit-tap-highlight-color: transparent;
-  appearance: none;
-  -webkit-appearance: none;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: pointer;
-  transition: background-color 90ms ease, opacity 90ms ease;
 }
 
-/* Override Obsidian's global button styles */
-.pw-transaction-modal-container .pw-mobile-numpad-btn:hover {
-  background: var(--interactive-normal) !important;
-}
-
-.pw-transaction-modal-container .pw-mobile-numpad-btn.is-pressed {
-  background: var(--background-modifier-hover) !important;
-}
-
-.pw-transaction-modal-container .pw-mobile-numpad-btn:focus,
-.pw-transaction-modal-container .pw-mobile-numpad-btn:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-  background: var(--interactive-normal) !important;
-}
-
-.pw-mobile-numpad-control {
-  font-size: 20px;  /* ⌫ and C — was 16px, now larger */
-  color: var(--text-muted);
+.pw-mobile-calculator-operator,
+.pw-mobile-calculator-clear {
   background: var(--background-secondary);
+  color: var(--text-muted);
 }
 
-.pw-transaction-modal-container .pw-mobile-numpad-control:focus,
-.pw-transaction-modal-container .pw-mobile-numpad-control:focus-visible {
-  background: var(--background-secondary) !important;
-}
-
-.pw-transaction-modal-container .pw-mobile-numpad-control.is-pressed {
-  background: var(--background-modifier-hover) !important;
-}
-
-.pw-mobile-numpad-confirm {
-  grid-row: span 2;
+.pw-mobile-calculator-equals {
+  grid-column: 1 / -1;
   background: var(--interactive-accent);
   color: var(--text-on-accent);
-  font-size: 26px;
   font-weight: 600;
 }
 
-.pw-transaction-modal-container .pw-mobile-numpad-confirm:focus,
-.pw-transaction-modal-container .pw-mobile-numpad-confirm:focus-visible {
-  background: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
-}
-
-.pw-transaction-modal-container .pw-mobile-numpad-confirm.is-pressed {
-  opacity: 0.85;
+.pw-transaction-modal-container .pw-mobile-calculator-btn:focus,
+.pw-transaction-modal-container .pw-mobile-calculator-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .pw-modal h2 {
