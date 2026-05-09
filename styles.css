@@ -1574,8 +1574,8 @@ button.pw-mobile-delete-row:active {
  *   sets --pw-pill-color (border + text active)
  *   sets --pw-pill-tint  (background active)
  * Base rule below reads both. */
-.pw-pill {
-  background: none;
+button.pw-pill {
+  background: transparent;
   border: 0.5px solid var(--background-modifier-border-hover);
   border-radius: 999px;
   padding: 6px 12px;
