@@ -134,6 +134,9 @@ const translations = {
     'err.sameWallet': '來源與目標錢包不能相同',
     'err.walletNameEmpty': '錢包名稱不能為空',
     'err.walletNameDuplicate': '錢包名稱已存在',
+    'calculator.err.pendingExpression': '請先按 = 完成計算',
+    'calculator.err.negativeResult': '計算結果不可為負數',
+    'calculator.err.divideByZero': '不可除以 0',
 
     // Settings
     'settings.general': '一般設定',
@@ -335,6 +338,9 @@ const translations = {
     'err.sameWallet': 'Source and target accounts cannot be the same',
     'err.walletNameEmpty': 'Account name cannot be empty',
     'err.walletNameDuplicate': 'Account name already exists',
+    'calculator.err.pendingExpression': 'Press = to finish the calculation',
+    'calculator.err.negativeResult': 'Calculation result cannot be negative',
+    'calculator.err.divideByZero': 'Cannot divide by 0',
 
     'settings.general': 'General',
     'settings.folderName': 'Folder name',
