@@ -158,10 +158,21 @@ function setInputValue(selector, value) {
   wait(200)
 }
 
+function setDetailSearch(value) {
+  setInputValue('[data-testid=detail-search]', value)
+  wait(400)
+}
+
 function rowHasTag(note, tag) {
-  return evalJs(`String([...document.querySelectorAll('[data-testid=tx-row]')]
-    .some(row => row.textContent?.includes(${JSON.stringify(note)})
-      && [...row.querySelectorAll('[data-testid=tx-tag-chip]')].some(chip => chip.dataset.tag === ${JSON.stringify(tag)})))`) === 'true'
+  return evalJs(`String((() => {
+    const input = document.querySelector('[data-testid=detail-search]');
+    if (!input) return false;
+    input.value = ${JSON.stringify(note)};
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const row = document.querySelector('[data-testid=tx-row]');
+    return !!row && [...row.querySelectorAll('[data-testid=tx-tag-chip]')]
+      .some(chip => chip.dataset.tag === ${JSON.stringify(tag)});
+  })())`) === 'true'
 }
 
 function countTagged(testid, tag) {
@@ -172,16 +183,15 @@ function countTagged(testid, tag) {
 }
 
 function clickEditForRow(note) {
+  setDetailSearch(note)
   evalJs(`(() => {
-    const row = [...document.querySelectorAll('[data-testid=tx-row]')]
-      .find(el => el.textContent?.includes(${JSON.stringify(note)}));
-    row?.querySelector('.pw-txn-btn[data-action="edit"]')?.click();
+    document.querySelector('[data-testid=tx-row]')?.click();
   })()`)
   wait(600)
 }
 
 function openAddModal() {
-  evalJs("document.querySelector('.modal-close-button')?.click()")
+  cleanupUiState()
   obs('command id="penny-wallet:add-transaction"')
   wait(500)
 }
@@ -199,6 +209,9 @@ function openDashboard() {
 function openDetail() {
   obs('command id="penny-wallet:open-detail"')
   wait(700)
+  click('[data-testid=detail-clear-filters]')
+  setInputValue('[data-testid=detail-search]', '')
+  wait(300)
 }
 
 function openAsset() {
@@ -206,13 +219,55 @@ function openAsset() {
   wait(700)
 }
 
-function tapNumpad(value) {
-  return click('.pw-mobile-numpad-btn', `(el) => el.textContent?.trim() === ${JSON.stringify(value)}`)
+function openCalculator() {
+  const opened = click('.pw-mobile-amount-area')
+  wait(300)
+  return opened && count('.pw-mobile-calculator-pad') === 1
+}
+
+function tapCalculator(value) {
+  return click('.pw-mobile-calculator-btn', `(el) => el.textContent?.trim() === ${JSON.stringify(value)}`)
+}
+
+function submitMobileModal() {
+  return click('.pw-mobile-top-confirm')
+}
+
+function openBottomSheetRow(index) {
+  return click('.pw-mobile-bottom-sheet-row', `(_el, i) => i === ${index}`)
+}
+
+function clickActiveBottomSheetCancel() {
+  const ok = evalJs(`(() => {
+    const btns = [...document.querySelectorAll('.pw-bottom-sheet-backdrop:not(.is-closing) .pw-bottom-sheet-btn')];
+    const btn = btns.find(el => el.getBoundingClientRect().height > 0);
+    if (!btn) return false;
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  })()`)
+  wait(700)
+  return ok === 'true'
+}
+
+function clickActiveTagPickerCancel() {
+  const ok = evalJs(`(() => {
+    const btn = [...document.querySelectorAll('.pw-bottom-sheet-backdrop:not(.is-closing) [data-testid=tag-picker-cancel]')]
+      .find(el => el.getBoundingClientRect().height > 0);
+    if (!btn) return false;
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  })()`)
+  wait(700)
+  return ok === 'true'
 }
 
 function selectFirstSheetOption() {
   const before = text('.pw-bottom-sheet-option.is-selected') ?? ''
-  const selected = click('.pw-bottom-sheet-option', "(el) => !el.classList.contains('is-selected') && el.dataset.value && el.textContent?.trim().length > 0")
+  const point = centerOf(
+    '.pw-bottom-sheet-option',
+    "(el) => !el.classList.contains('is-selected') && el.dataset.value && el.textContent?.trim().length > 0",
+  )
+  const selected = tapAt(point)
   wait(400)
   const after = text('.pw-mobile-bottom-sheet-row .pw-mobile-row-value') ?? ''
   return { selected, before, after }
@@ -223,17 +278,21 @@ function selectTagPickerTag(tag) {
 }
 
 function closeModal() {
-  evalJs("document.querySelector('.modal-close-button')?.click()")
-  wait(300)
+  evalJs(`(() => {
+    document.querySelector('.pw-mobile-top-btn:not(.pw-mobile-top-confirm)')?.click();
+    document.querySelector('.modal-close-button')?.click();
+  })()`)
+  wait(500)
 }
 
 function cleanupUiState() {
   evalJs(`(() => {
     document.querySelectorAll('.pw-bottom-sheet-backdrop').forEach(el => el.remove());
     document.body.classList.remove('pw-bottom-sheet-lock');
+    document.querySelectorAll('.pw-mobile-top-btn:not(.pw-mobile-top-confirm)').forEach(el => el.click());
     document.querySelectorAll('.modal-close-button').forEach(el => el.click());
   })()`)
-  wait(300)
+  wait(500)
 }
 
 section('Mobile environment')
@@ -286,7 +345,7 @@ section('Mobile detail')
 
 openDetail()
 assert('Detail view opens', count('.pw-detail') > 0)
-assert('Type filter pills present', count('.pw-filter-pill, .pw-pill') > 0 || count('.pw-type-filter') > 0)
+assert('Type filter pills present', count('.pw-filter-pill, .pw-pill') > 0 || count('.pw-type-filter') > 0 || count('[data-testid=detail-filter-btn]') > 0)
 assert('Transaction rows rendered', count('.pw-tx-row, .pw-detail-row, table tr') > 0)
 click('.pw-filter-pill, .pw-pill', "(el) => el.textContent?.toLowerCase().includes('expense')")
 wait(400)
@@ -300,16 +359,16 @@ openAddModal()
 assert('Mobile modal opens', count('.pw-mobile-content') > 0)
 assert('Mobile type tabs render', count('.pw-mobile-tab') >= 3)
 assert('Mobile picker rows render', count('.pw-mobile-bottom-sheet-row') >= 2)
-assert('Custom numpad renders', count('.pw-mobile-numpad') === 1)
+assert('Calculator hidden by default', count('.pw-mobile-calculator-pad') === 0)
+assert('Calculator opens from amount display', openCalculator())
 
 section('Bottom sheet picker')
 
-const categoryPoint = centerOf('.pw-mobile-bottom-sheet-row', "(el) => el.querySelector('.pw-mobile-row-label')?.textContent?.trim().length > 0")
-assert('Category picker row has tap target', clickAt(categoryPoint))
+assert('Category picker row has tap target', openBottomSheetRow(0))
 wait(500)
-assert('Bottom sheet opens', count('.pw-bottom-sheet-backdrop.is-open') === 1)
+assert('Bottom sheet opens', count('.pw-bottom-sheet-backdrop') === 1)
 assert('Bottom sheet search is present', count('.pw-bottom-sheet-search') === 1)
-assert('Numpad hidden while picker is open', metric('.pw-mobile-numpad')?.display === 'none')
+assert('Calculator hidden while picker is open', count('.pw-mobile-calculator-pad') === 0)
 
 section('Bottom sheet keyboard coexistence')
 
@@ -321,20 +380,18 @@ wait(500)
 
 const searchMetric = metric('.pw-bottom-sheet-search')
 const emptyMetric = metric('.pw-bottom-sheet-empty')
-const numpadMetric = metric('.pw-mobile-numpad')
 assert('No-results state renders', count('.pw-bottom-sheet-empty') === 1)
 assert('Focused search remains above viewport bottom', searchMetric !== null && searchMetric.bottom < 932, searchMetric ? `bottom=${searchMetric.bottom}` : 'missing')
 assert('No-results message remains above viewport bottom', emptyMetric !== null && emptyMetric.bottom < 932, emptyMetric ? `bottom=${emptyMetric.bottom}` : 'missing')
-assert('Numpad stays hidden during search focus', numpadMetric?.display === 'none')
+assert('Calculator stays hidden during search focus', count('.pw-mobile-calculator-pad') === 0)
 
-evalJs("document.querySelector('.pw-bottom-sheet-btn')?.click()")
-wait(400)
-assert('Bottom sheet closes from cancel', count('.pw-bottom-sheet-backdrop.is-open') === 0)
+clickActiveBottomSheetCancel()
+assert('Bottom sheet closes from cancel', count('.pw-bottom-sheet-backdrop:not(.is-closing)') === 0)
 
 section('Bottom sheet selection')
 
 const rowValueBefore = text('.pw-mobile-bottom-sheet-row .pw-mobile-row-value')
-assert('Category picker opens again', clickAt(categoryPoint))
+assert('Category picker opens again', openBottomSheetRow(0))
 const optionResult = selectFirstSheetOption()
 assert('Bottom sheet option can be selected', optionResult.selected)
 const rowValueAfter = text('.pw-mobile-bottom-sheet-row .pw-mobile-row-value')
@@ -355,8 +412,8 @@ const tagEmptyMetric = metric('.pw-tag-picker-empty')
 assert('Tag picker no-results state renders', count('.pw-tag-picker-empty') === 1)
 assert('Focused tag search remains above viewport bottom', tagSearchMetric !== null && tagSearchMetric.bottom < 932, tagSearchMetric ? `bottom=${tagSearchMetric.bottom}` : 'missing')
 assert('Tag picker no-results remains above viewport bottom', tagEmptyMetric !== null && tagEmptyMetric.bottom < 932, tagEmptyMetric ? `bottom=${tagEmptyMetric.bottom}` : 'missing')
-assert('Numpad stays hidden during tag search focus', metric('.pw-mobile-numpad')?.display === 'none')
-click('[data-testid=tag-picker-cancel]')
+assert('Calculator stays hidden during tag search focus', count('.pw-mobile-calculator-pad') === 0)
+clickActiveTagPickerCancel()
 assert('Tag picker closes from cancel', count('.pw-tag-picker') === 0)
 
 section('Text input keyboard coexistence')
@@ -365,7 +422,7 @@ const notePoint = centerOf('.pw-mobile-note-input')
 assert('Note input has tap target', tapAt(notePoint))
 assert('Note input is focused after tap', activeMatches('.pw-mobile-note-input'))
 assert('Text focus class is applied', count('.pw-mobile-content.pw-mobile-text-focus') === 1)
-assert('Numpad hidden while note input is focused', metric('.pw-mobile-numpad')?.display === 'none')
+assert('Calculator hidden while note input is focused', count('.pw-mobile-calculator-pad') === 0)
 
 evalJs("document.querySelector('.modal-close-button')?.click()")
 wait(300)
@@ -376,14 +433,15 @@ closeModal()
 openDetail()
 const rowsBeforeAdd = count('.pw-tx-row')
 openAddModal()
-tapNumpad('1')
-tapNumpad('5')
-tapNumpad('0')
-assert('Numpad updates amount display', (text('.pw-mobile-amount-display') ?? '').includes('150'))
+assert('Calculator opens for amount entry', openCalculator())
+tapCalculator('1')
+tapCalculator('5')
+tapCalculator('0')
+assert('Calculator updates amount display', (text('.pw-mobile-amount-display') ?? '').includes('150'))
 
-assert('Category row opens for selection', clickAt(centerOf('.pw-mobile-bottom-sheet-row', '(_el, i) => i === 0')))
+assert('Category row opens for selection', openBottomSheetRow(0))
 assert('Category option selected', selectFirstSheetOption().selected)
-assert('Wallet row opens for selection', clickAt(centerOf('.pw-mobile-bottom-sheet-row', '(_el, i) => i === 1')))
+assert('Wallet row opens for selection', openBottomSheetRow(1))
 assert('Wallet option selected', selectFirstSheetOption().selected)
 assert('Tag row opens for selection', clickAt(centerOf('[data-testid=mobile-tag-row]')))
 assert('Tag option selected', selectTagPickerTag(MOBILE_TAG))
@@ -391,10 +449,10 @@ click('[data-testid=tag-picker-done]')
 assert('Selected tag appears on mobile form', countTagged('mobile-tag-chip', MOBILE_TAG) === 1)
 setInputValue('.pw-mobile-note-input', mobileTagNote)
 
-click('.pw-mobile-numpad-confirm')
+submitMobileModal()
 wait(900)
 const addError = text('.pw-error')
-assert('Mobile add modal closes after submit', count('.modal-content') === 0)
+assert('Mobile add modal closes after submit', count('.pw-mobile-content') === 0)
 openDetail()
 assert('Mobile add increases row count', count('.pw-tx-row') === rowsBeforeAdd + 1, `${rowsBeforeAdd} -> ${count('.pw-tx-row')}; error=${addError}`)
 assert('Mobile added transaction keeps tag in detail', rowHasTag(mobileTagNote, MOBILE_TAG))
@@ -413,11 +471,12 @@ assert('Mobile edit can remove existing tag', selectTagPickerTag(MOBILE_TAG))
 assert('Mobile edit can select replacement tag', selectTagPickerTag(MOBILE_EDIT_TAG))
 click('[data-testid=tag-picker-done]')
 assert('Mobile edit shows replacement tag on form', countTagged('mobile-tag-chip', MOBILE_EDIT_TAG) === 1)
-tapNumpad('C')
-tapNumpad('9')
-tapNumpad('9')
-tapNumpad('9')
-click('.pw-mobile-numpad-confirm')
+assert('Calculator opens for edit amount', openCalculator())
+tapCalculator('C')
+tapCalculator('9')
+tapCalculator('9')
+tapCalculator('9')
+submitMobileModal()
 wait(900)
 const editError = text('.pw-error')
 assert('Mobile edit modal closes after submit', count('.modal-content') === 0, editError ?? '')
@@ -433,16 +492,21 @@ section('Mobile delete transaction')
 closeModal()
 openDetail()
 const rowsBeforeDelete = count('.pw-tx-row')
-click('.pw-txn-btn[data-action="delete"]')
+clickEditForRow(mobileTagNote)
+click('.pw-mobile-delete-row')
 wait(400)
 assert('Mobile delete confirm dialog appears', count('.modal-content') > 0)
 click('.modal-content [data-action="cancel"]')
 wait(400)
+closeModal()
+openDetail()
 assert('Mobile delete cancel keeps row count', count('.pw-tx-row') === rowsBeforeDelete)
-click('.pw-txn-btn[data-action="delete"]')
+clickEditForRow(mobileTagNote)
+click('.pw-mobile-delete-row')
 wait(400)
 click('.modal-content [data-action="confirm"]')
 wait(800)
+openDetail()
 assert('Mobile delete confirm decreases row count', count('.pw-tx-row') === rowsBeforeDelete - 1)
 
 section('Mobile settings wallet flow')
