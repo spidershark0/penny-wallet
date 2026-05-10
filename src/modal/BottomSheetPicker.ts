@@ -26,7 +26,7 @@ export function filterBottomSheetOptions(
   )
 }
 
-interface BottomSheetShellParams {
+export interface BottomSheetShellParams {
   containerEl: HTMLElement
   title: string
   leftBtn?: { label: string; onClick: (close: () => void) => void } | null
@@ -35,12 +35,12 @@ interface BottomSheetShellParams {
   leafContext?: boolean
 }
 
-interface BottomSheetShell {
+export interface BottomSheetShell {
   sheet: HTMLElement
   close: () => void
 }
 
-function openBottomSheetShell(params: BottomSheetShellParams): BottomSheetShell {
+export function openBottomSheetShell(params: BottomSheetShellParams): BottomSheetShell {
   const { containerEl, title, leftBtn, rightBtn, onClose, leafContext } = params
   let closeTimer: number | null = null
 

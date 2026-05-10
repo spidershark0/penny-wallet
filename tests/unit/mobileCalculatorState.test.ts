@@ -34,10 +34,10 @@ describe('mobile calculator state', () => {
     expect(state.amountValue).toBe('1.23')
   })
 
-  it('calculates a complete addition expression and keeps the resolved formula', () => {
+  it('calculates a complete addition expression and clears the formula', () => {
     const state = pressAll(['1', '0', '0', '+', '2', '0', '='])
     expect(state.amountValue).toBe('120')
-    expect(state.expressionText).toBe('100 + 20 =')
+    expect(state.expressionText).toBe('')
     expect(state.isPendingExpression).toBe(false)
     expect(state.isResolved).toBe(true)
     expect(state.submitBlocker).toBeUndefined()
@@ -54,13 +54,13 @@ describe('mobile calculator state', () => {
   it('uses left-to-right calculation for chained operators', () => {
     const state = pressAll(['1', '0', '0', '+', '2', '0', '×', '3', '='])
     expect(state.amountValue).toBe('360')
-    expect(state.expressionText).toBe('120 × 3 =')
+    expect(state.expressionText).toBe('')
   })
 
   it('rounds division results to config decimal places', () => {
     const state = pressAll(['1', '0', '÷', '3', '='], '', 2)
     expect(state.amountValue).toBe('3.33')
-    expect(state.expressionText).toBe('10 ÷ 3 =')
+    expect(state.expressionText).toBe('')
   })
 
   it('clears amount and expression with C', () => {
@@ -97,6 +97,6 @@ describe('mobile calculator state', () => {
   it('can initialize from the modal amount', () => {
     const state = pressAll(['+', '8', '='], '12')
     expect(state.amountValue).toBe('20')
-    expect(state.expressionText).toBe('12 + 8 =')
+    expect(state.expressionText).toBe('')
   })
 })

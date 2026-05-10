@@ -4,7 +4,7 @@ import { t } from '../i18n'
 import { TransactionModal } from './TransactionModal'
 import { formatMobileHeroAmount } from '../utils'
 import { getTransferWalletCandidates } from './transactionState'
-import { openBottomSheetPicker, type BottomSheetOption } from './BottomSheetPicker'
+import { openBottomSheetPicker, openBottomSheetShell, type BottomSheetOption } from './BottomSheetPicker'
 import { openTagPicker } from './TagPicker'
 import { MobileCalculatorPad } from './MobileCalculatorPad'
 import {
@@ -21,6 +21,7 @@ export class MobileTransactionModal extends TransactionModal {
   private mobileAmountFormulaEl!: HTMLElement
   private mobileCalculatorState: MobileCalculatorState = createMobileCalculatorState()
   private mobileCalculatorPad: MobileCalculatorPad | null = null
+  private mobileCalculatorClose: (() => void) | null = null
   private mobileDecimalPlaces = 0
   private viewportCleanups: (() => void)[] = []
 
@@ -38,13 +39,8 @@ export class MobileTransactionModal extends TransactionModal {
     contentEl.addClass('pw-mobile-content')
     containerEl.addClass('pw-transaction-modal-container')
 
-    // Remove Obsidian native header elements (titleEl on desktop, modal-header on mobile)
-    this.titleEl.remove()
-    this.modalEl.querySelector('.modal-header')?.remove()
-
-    // Toolbar in modal header position (sibling of contentEl, before it)
-    const topBar = createDiv('pw-mobile-top-bar')
-    this.modalEl.insertBefore(topBar, contentEl)
+    // Top bar: x | title | check
+    const topBar = contentEl.createDiv('pw-mobile-top-bar')
     const cancelBtn = topBar.createEl('button', { cls: 'pw-mobile-top-btn', text: '✕' })
     const titleEl = topBar.createEl('span', {
       cls: 'pw-mobile-top-title',
@@ -246,10 +242,8 @@ export class MobileTransactionModal extends TransactionModal {
         return
       }
       for (const tag of this.tags) {
-        // Display-only chips that match the picker's selected style (oval, accent).
-        // Tap anywhere on the row (chip or whitespace) opens the picker (B1).
         const chip = tagChipsEl.createSpan({
-          cls: 'pw-pill pw-pill-color-neutral is-active',
+          cls: 'pw-mobile-tag-chip',
           text: `#${tag}`,
         })
         chip.dataset['testid'] = 'mobile-tag-chip'
@@ -257,7 +251,7 @@ export class MobileTransactionModal extends TransactionModal {
       }
     }
 
-    tagChipsEl.addEventListener('click', () => {
+    tagRow.addEventListener('click', () => {
       this.closeCalculatorPad()
       openTagPicker({
         containerEl: this.contentEl,
@@ -388,8 +382,21 @@ export class MobileTransactionModal extends TransactionModal {
       decimalPlaces: this.mobileDecimalPlaces,
     }
     this.contentEl.addClass('pw-mobile-calculator-active')
+    const { sheet, close } = openBottomSheetShell({
+      containerEl: this.contentEl,
+      title: t('modal.amount'),
+      leftBtn: null,
+      rightBtn: null,
+      onClose: () => {
+        this.mobileCalculatorPad = null
+        this.mobileCalculatorClose = null
+        this.contentEl.removeClass('pw-mobile-calculator-active')
+      },
+    })
+    sheet.addClass('pw-mobile-calculator-sheet')
+    this.mobileCalculatorClose = close
     this.mobileCalculatorPad = new MobileCalculatorPad({
-      parentEl: this.contentEl,
+      parentEl: sheet,
       initialState: this.mobileCalculatorState,
       onKey: (key) => this.handleCalculatorKey(key),
     })
@@ -397,8 +404,11 @@ export class MobileTransactionModal extends TransactionModal {
   }
 
   private closeCalculatorPad() {
-    if (!this.mobileCalculatorPad) return
-    this.mobileCalculatorPad.remove()
+    if (this.mobileCalculatorClose) {
+      this.mobileCalculatorClose()
+      return
+    }
+    this.mobileCalculatorPad?.remove()
     this.mobileCalculatorPad = null
     this.contentEl.removeClass('pw-mobile-calculator-active')
   }
@@ -437,8 +447,10 @@ export class MobileTransactionModal extends TransactionModal {
   }
 
   onClose() {
+    this.mobileCalculatorClose?.()
     this.mobileCalculatorPad?.remove()
     this.mobileCalculatorPad = null
+    this.mobileCalculatorClose = null
     this.viewportCleanups.forEach(fn => fn())
     this.viewportCleanups = []
     document.body.removeClass('pw-bottom-sheet-lock')

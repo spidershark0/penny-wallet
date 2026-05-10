@@ -145,7 +145,7 @@ function resolveExpression(state: MobileCalculatorState): MobileCalculatorState 
   return buildState({
     ...state,
     amountValue: result.value,
-    expressionText: `${state.leftOperand} ${state.operator} ${state.rightOperand} =`,
+    expressionText: '',
     leftOperand: '',
     operator: null,
     rightOperand: '',

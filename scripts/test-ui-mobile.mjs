@@ -233,7 +233,20 @@ function submitMobileModal() {
   return click('.pw-mobile-top-confirm')
 }
 
+function closeCalculatorSheet() {
+  const ok = evalJs(`(() => {
+    const backdrop = [...document.querySelectorAll('.pw-bottom-sheet-backdrop:not(.is-closing)')]
+      .find(el => el.querySelector('.pw-mobile-calculator-pad'));
+    if (!backdrop) return false;
+    backdrop.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  })()`)
+  wait(700)
+  return ok === 'true'
+}
+
 function openBottomSheetRow(index) {
+  if (count('.pw-mobile-calculator-pad') > 0) closeCalculatorSheet()
   return click('.pw-mobile-bottom-sheet-row', `(_el, i) => i === ${index}`)
 }
 
@@ -254,7 +267,7 @@ function clickActiveTagPickerCancel() {
     const btn = [...document.querySelectorAll('.pw-bottom-sheet-backdrop:not(.is-closing) [data-testid=tag-picker-cancel]')]
       .find(el => el.getBoundingClientRect().height > 0);
     if (!btn) return false;
-    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    btn.click();
     return true;
   })()`)
   wait(700)
