@@ -1,5 +1,5 @@
 export type MobileCalculatorOperator = '+' | '-' | '×' | '÷'
-export type MobileCalculatorKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | MobileCalculatorOperator | '=' | 'C'
+export type MobileCalculatorKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | MobileCalculatorOperator | '=' | 'C' | '⌫' | '00'
 export type MobileCalculatorErrorKey =
   | 'calculator.err.pendingExpression'
   | 'calculator.err.negativeResult'
@@ -41,6 +41,8 @@ export function pressMobileCalculatorKey(
 ): MobileCalculatorState {
   if (key === 'C') return createMobileCalculatorState('', state.decimalPlaces)
   if (key === '=') return resolveExpression(state)
+  if (key === '⌫') return pressBackspace(state)
+  if (key === '00') return pressNumberKey(pressNumberKey(state, '0'), '0')
   if (operators.has(key)) return pressOperator(state, key as MobileCalculatorOperator)
   if (key === '.' || /^\d$/.test(key)) return pressNumberKey(state, key)
   return state
@@ -165,6 +167,56 @@ function resolveExpression(state: MobileCalculatorState): MobileCalculatorState 
     rightOperand: '',
     isPendingExpression: false,
     isResolved: true,
+    errorKey: undefined,
+  })
+}
+
+function pressBackspace(state: MobileCalculatorState): MobileCalculatorState {
+  if (state.isResolved) return state
+
+  if (state.operator) {
+    if (!state.rightOperand) {
+      return buildState({
+        ...state,
+        leftOperand: '',
+        operator: null,
+        amountValue: state.leftOperand,
+        expressionText: '',
+        historyText: '',
+        isPendingExpression: false,
+        errorKey: undefined,
+      })
+    }
+    const newRight = state.rightOperand.slice(0, -1)
+    if (newRight === '') {
+      return buildState({
+        ...state,
+        rightOperand: '',
+        amountValue: state.leftOperand,
+        expressionText: state.historyText,
+        isPendingExpression: true,
+        errorKey: undefined,
+      })
+    }
+    return buildState({
+      ...state,
+      rightOperand: newRight,
+      amountValue: newRight,
+      expressionText: `${state.historyText} ${newRight}`,
+      isPendingExpression: true,
+      errorKey: undefined,
+    })
+  }
+
+  const newAmount = state.amountValue.slice(0, -1)
+  if (newAmount === state.amountValue) return state
+  return buildState({
+    ...state,
+    amountValue: newAmount,
+    expressionText: '',
+    historyText: '',
+    isPendingExpression: false,
+    isResolved: false,
     errorKey: undefined,
   })
 }

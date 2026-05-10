@@ -875,9 +875,12 @@ button.pw-mobile-calculator-btn {
   -webkit-tap-highlight-color: transparent;
 }
 
-button.pw-mobile-calculator-btn:hover,
-button.pw-mobile-calculator-btn:active {
+button.pw-mobile-calculator-btn:hover {
   background: transparent;
+}
+
+button.pw-mobile-calculator-btn:active {
+  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
 }
 
 button.pw-mobile-calculator-operator,
@@ -887,22 +890,30 @@ button.pw-mobile-calculator-clear {
 }
 
 button.pw-mobile-calculator-operator:hover,
-button.pw-mobile-calculator-operator:active,
-button.pw-mobile-calculator-clear:hover,
-button.pw-mobile-calculator-clear:active {
+button.pw-mobile-calculator-clear:hover {
   background: transparent;
 }
 
+button.pw-mobile-calculator-operator:active,
+button.pw-mobile-calculator-clear:active {
+  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
+}
+
 button.pw-mobile-calculator-equals {
-  grid-column: 1 / -1;
+  grid-column: 4;
+  grid-row: 4 / span 2;
+  height: auto;
   background: transparent;
   color: var(--text-normal);
   font-weight: 600;
 }
 
-button.pw-mobile-calculator-equals:hover,
-button.pw-mobile-calculator-equals:active {
+button.pw-mobile-calculator-equals:hover {
   background: transparent;
+}
+
+button.pw-mobile-calculator-equals:active {
+  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
 }
 
 .pw-transaction-modal-container .pw-mobile-calculator-btn:focus,

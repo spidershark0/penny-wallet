@@ -118,6 +118,53 @@ describe('mobile calculator state', () => {
     expect(state.expressionText).toBe('')
   })
 
+  it('backspace removes last digit from amount', () => {
+    const state = pressAll(['1', '2', '3', '⌫'])
+    expect(state.amountValue).toBe('12')
+    expect(state.expressionText).toBe('')
+    expect(state.submitBlocker).toBeUndefined()
+  })
+
+  it('backspace removes last digit of right operand', () => {
+    const state = pressAll(['1', '0', '+', '2', '0', '⌫'])
+    expect(state.amountValue).toBe('2')
+    expect(state.expressionText).toBe('10 + 2')
+    expect(state.isPendingExpression).toBe(true)
+  })
+
+  it('backspace on single right operand digit returns to operator-pending state', () => {
+    const state = pressAll(['1', '0', '+', '5', '⌫'])
+    expect(state.amountValue).toBe('10')
+    expect(state.expressionText).toBe('10 +')
+    expect(state.isPendingExpression).toBe(true)
+  })
+
+  it('backspace on operator-pending state removes the operator', () => {
+    const state = pressAll(['1', '0', '+', '⌫'])
+    expect(state.amountValue).toBe('10')
+    expect(state.expressionText).toBe('')
+    expect(state.operator).toBeNull()
+    expect(state.isPendingExpression).toBe(false)
+    expect(state.submitBlocker).toBeUndefined()
+  })
+
+  it('backspace does nothing on resolved state', () => {
+    const before = pressAll(['5', '+', '3', '='])
+    const after = pressAll(['5', '+', '3', '=', '⌫'])
+    expect(after.amountValue).toBe(before.amountValue)
+    expect(after.isResolved).toBe(true)
+  })
+
+  it('00 appends double zero to the current number', () => {
+    const state = pressAll(['5', '00'])
+    expect(state.amountValue).toBe('500')
+  })
+
+  it('00 when amount is empty produces 0', () => {
+    const state = pressAll(['00'])
+    expect(state.amountValue).toBe('0')
+  })
+
   it('can initialize from the modal amount', () => {
     const state = pressAll(['+', '8', '='], '12')
     expect(state.amountValue).toBe('20')

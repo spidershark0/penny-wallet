@@ -8,11 +8,11 @@ interface MobileCalculatorPadParams {
 }
 
 const keyRows: MobileCalculatorKey[][] = [
-  ['7', '8', '9', '÷'],
-  ['4', '5', '6', '×'],
-  ['1', '2', '3', '-'],
-  ['C', '0', '.', '+'],
-  ['='],
+  ['C', '⌫', '÷', '×'],
+  ['7', '8', '9', '-'],
+  ['4', '5', '6', '+'],
+  ['1', '2', '3'],
+  ['00', '0', '.'],
 ]
 
 export class MobileCalculatorPad {
@@ -52,12 +52,18 @@ export class MobileCalculatorPad {
         this.bindButton(btn, key)
       }
     }
+    const equalsBtn = gridEl.createEl('button', {
+      cls: this.getButtonClass('='),
+      text: '=',
+    })
+    equalsBtn.dataset['calculatorKey'] = '='
+    this.bindButton(equalsBtn, '=')
   }
 
   private getButtonClass(key: MobileCalculatorKey): string {
     const classes = ['pw-mobile-calculator-btn']
     if (['+', '-', '×', '÷'].includes(key)) classes.push('pw-mobile-calculator-operator')
-    if (key === 'C') classes.push('pw-mobile-calculator-clear')
+    if (key === 'C' || key === '⌫') classes.push('pw-mobile-calculator-clear')
     if (key === '=') classes.push('pw-mobile-calculator-equals')
     return classes.join(' ')
   }
