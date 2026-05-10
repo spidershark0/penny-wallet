@@ -2,6 +2,19 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
+## [0.0.12] - 2026-05-10
+
+### Added
+- add mobile calculator state
+- add mobile calculator pad component
+- wire mobile calculator modal flow
+- refine mobile calculator sheet
+- add ⌫ backspace and 00 keys to mobile calculator
+
+### Changed
+- update mobile calculator layout
+- move calculator formula to sheet title bar
+
 ## [0.0.11] - 2026-05-09
 
 ### Added
