@@ -12,6 +12,7 @@ export interface MobileCalculatorState {
   leftOperand: string
   operator: MobileCalculatorOperator | null
   rightOperand: string
+  historyText: string
   isPendingExpression: boolean
   isResolved: boolean
   errorKey?: MobileCalculatorErrorKey
@@ -28,6 +29,7 @@ export function createMobileCalculatorState(initialAmount = '', decimalPlaces = 
     leftOperand: '',
     operator: null,
     rightOperand: '',
+    historyText: '',
     isPendingExpression: false,
     isResolved: false,
   })
@@ -56,7 +58,7 @@ function pressNumberKey(state: MobileCalculatorState, key: string): MobileCalcul
       ...fresh,
       rightOperand: nextNumber,
       amountValue: nextNumber,
-      expressionText: `${fresh.leftOperand} ${fresh.operator} ${nextNumber}`,
+      expressionText: `${fresh.historyText} ${nextNumber}`,
       isPendingExpression: true,
       isResolved: false,
     })
@@ -66,6 +68,7 @@ function pressNumberKey(state: MobileCalculatorState, key: string): MobileCalcul
     ...fresh,
     amountValue: nextNumber,
     expressionText: '',
+    historyText: '',
     isPendingExpression: false,
     isResolved: false,
   })
@@ -76,12 +79,14 @@ function pressOperator(
   nextOperator: MobileCalculatorOperator,
 ): MobileCalculatorState {
   if (state.isResolved) {
+    const nextHistory = `${state.amountValue} ${nextOperator}`
     return buildState({
       ...state,
       leftOperand: state.amountValue,
       operator: nextOperator,
       rightOperand: '',
-      expressionText: `${state.amountValue} ${nextOperator}`,
+      historyText: nextHistory,
+      expressionText: nextHistory,
       isPendingExpression: true,
       isResolved: false,
       errorKey: undefined,
@@ -90,12 +95,14 @@ function pressOperator(
 
   if (!state.operator) {
     if (!state.amountValue) return state
+    const nextHistory = `${state.amountValue} ${nextOperator}`
     return buildState({
       ...state,
       leftOperand: state.amountValue,
       operator: nextOperator,
       rightOperand: '',
-      expressionText: `${state.amountValue} ${nextOperator}`,
+      historyText: nextHistory,
+      expressionText: nextHistory,
       isPendingExpression: true,
       isResolved: false,
       errorKey: undefined,
@@ -103,10 +110,14 @@ function pressOperator(
   }
 
   if (!state.rightOperand) {
+    const nextHistory = state.historyText
+      ? `${state.historyText.slice(0, -1)}${nextOperator}`
+      : `${state.leftOperand} ${nextOperator}`
     return buildState({
       ...state,
       operator: nextOperator,
-      expressionText: `${state.leftOperand} ${nextOperator}`,
+      historyText: nextHistory,
+      expressionText: nextHistory,
       errorKey: undefined,
     })
   }
@@ -116,13 +127,15 @@ function pressOperator(
     return buildState({ ...state, errorKey: folded.errorKey })
   }
 
+  const nextHistory = `${state.historyText} ${state.rightOperand} ${nextOperator}`
   return buildState({
     ...state,
     amountValue: folded.value,
     leftOperand: folded.value,
     operator: nextOperator,
     rightOperand: '',
-    expressionText: `${folded.value} ${nextOperator}`,
+    historyText: nextHistory,
+    expressionText: nextHistory,
     isPendingExpression: true,
     isResolved: false,
     errorKey: undefined,
@@ -146,6 +159,7 @@ function resolveExpression(state: MobileCalculatorState): MobileCalculatorState 
     ...state,
     amountValue: result.value,
     expressionText: '',
+    historyText: '',
     leftOperand: '',
     operator: null,
     rightOperand: '',

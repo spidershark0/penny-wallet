@@ -37,6 +37,7 @@ export interface BottomSheetShellParams {
 
 export interface BottomSheetShell {
   sheet: HTMLElement
+  titleEl: HTMLElement
   close: () => void
 }
 
@@ -85,7 +86,7 @@ export function openBottomSheetShell(params: BottomSheetShellParams): BottomShee
     bar.createSpan('pw-bottom-sheet-spacer')
   }
 
-  bar.createEl('span', { cls: 'pw-bottom-sheet-title', text: title })
+  const titleEl = bar.createEl('span', { cls: 'pw-bottom-sheet-title', text: title })
 
   if (rightBtn) {
     const btn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn-primary', text: rightBtn.label })
@@ -96,7 +97,7 @@ export function openBottomSheetShell(params: BottomSheetShellParams): BottomShee
 
   requestAnimationFrame(() => backdrop.addClass('is-open'))
 
-  return { sheet, close }
+  return { sheet, titleEl, close }
 }
 
 export function openBottomSheetPicker(params: BottomSheetPickerParams): () => void {

@@ -349,24 +349,6 @@ canvas {
   color: var(--text-muted);
 }
 
-.pw-mobile-amount-formula {
-  display: none;
-  min-height: 18px;
-  margin-top: 2px;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 18px;
-  font-variant-numeric: tabular-nums;
-}
-
-.pw-mobile-amount-formula.is-visible {
-  display: block;
-}
-
-.pw-mobile-amount-formula.is-warning {
-  color: var(--text-warning);
-}
-
 /* Error in mobile modal */
 .pw-mobile-error {
   margin: 0;
@@ -825,13 +807,41 @@ button.pw-mobile-delete-row:active {
 }
 
 .pw-mobile-calculator-sheet {
+  --pw-mobile-calculator-bg: var(--background-secondary);
+
   height: auto;
   min-height: 0;
+  background: var(--pw-mobile-calculator-bg);
+}
+
+.pw-mobile-calculator-sheet .pw-bottom-sheet-handle,
+.pw-mobile-calculator-sheet .pw-bottom-sheet-bar {
+  background: var(--pw-mobile-calculator-bg);
+}
+
+.pw-mobile-calculator-sheet .pw-bottom-sheet-bar {
+  min-height: 36px;
+  border-bottom: 0;
+}
+
+.pw-mobile-calculator-sheet .pw-bottom-sheet-title {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.pw-mobile-calculator-sheet .pw-bottom-sheet-title.is-empty {
+  color: transparent;
+}
+
+.pw-mobile-calculator-sheet .pw-bottom-sheet-title.is-warning {
+  color: var(--text-warning);
 }
 
 .pw-mobile-calculator-pad {
   width: 100%;
-  background: var(--background-secondary);
+  background: var(--pw-mobile-calculator-bg);
 }
 
 .pw-mobile-calculator-error {
@@ -851,14 +861,12 @@ button.pw-mobile-delete-row:active {
 .pw-mobile-calculator-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: var(--background-secondary);
+  background: var(--pw-mobile-calculator-bg);
 }
 
-.pw-mobile-calculator-btn {
+button.pw-mobile-calculator-btn {
   height: 54px;
   border: 0;
-  border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 70%, transparent);
-  border-right: 1px solid color-mix(in srgb, var(--background-modifier-border) 70%, transparent);
   border-radius: 0;
   background: transparent;
   color: var(--text-normal);
@@ -867,21 +875,34 @@ button.pw-mobile-delete-row:active {
   -webkit-tap-highlight-color: transparent;
 }
 
-.pw-mobile-calculator-btn:nth-child(4n) {
-  border-right: 0;
+button.pw-mobile-calculator-btn:hover,
+button.pw-mobile-calculator-btn:active {
+  background: transparent;
 }
 
-.pw-mobile-calculator-operator,
-.pw-mobile-calculator-clear {
-  background: color-mix(in srgb, var(--background-primary) 36%, transparent);
+button.pw-mobile-calculator-operator,
+button.pw-mobile-calculator-clear {
+  background: transparent;
   color: var(--text-muted);
 }
 
-.pw-mobile-calculator-equals {
+button.pw-mobile-calculator-operator:hover,
+button.pw-mobile-calculator-operator:active,
+button.pw-mobile-calculator-clear:hover,
+button.pw-mobile-calculator-clear:active {
+  background: transparent;
+}
+
+button.pw-mobile-calculator-equals {
   grid-column: 1 / -1;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background: transparent;
+  color: var(--text-normal);
   font-weight: 600;
+}
+
+button.pw-mobile-calculator-equals:hover,
+button.pw-mobile-calculator-equals:active {
+  background: transparent;
 }
 
 .pw-transaction-modal-container .pw-mobile-calculator-btn:focus,

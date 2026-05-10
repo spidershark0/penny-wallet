@@ -18,10 +18,10 @@ export class MobileTransactionModal extends TransactionModal {
   private mobileTabsEl!: HTMLElement
   private mobileRowsEl!: HTMLElement
   private mobileAmountEl!: HTMLElement
-  private mobileAmountFormulaEl!: HTMLElement
   private mobileCalculatorState: MobileCalculatorState = createMobileCalculatorState()
   private mobileCalculatorPad: MobileCalculatorPad | null = null
   private mobileCalculatorClose: (() => void) | null = null
+  private mobileCalculatorTitleEl: HTMLElement | null = null
   private mobileDecimalPlaces = 0
   private viewportCleanups: (() => void)[] = []
 
@@ -76,7 +76,6 @@ export class MobileTransactionModal extends TransactionModal {
       this.openCalculatorPad()
     })
     this.mobileAmountEl = amountArea.createDiv('pw-mobile-amount-display')
-    this.mobileAmountFormulaEl = amountArea.createDiv('pw-mobile-amount-formula')
     this.mobileDecimalPlaces = config.decimalPlaces
     this.mobileCalculatorState = createMobileCalculatorState(this.amount, this.mobileDecimalPlaces)
     this.updateAmountDisplay()
@@ -382,18 +381,20 @@ export class MobileTransactionModal extends TransactionModal {
       decimalPlaces: this.mobileDecimalPlaces,
     }
     this.contentEl.addClass('pw-mobile-calculator-active')
-    const { sheet, close } = openBottomSheetShell({
+    const { sheet, titleEl, close } = openBottomSheetShell({
       containerEl: this.contentEl,
-      title: t('modal.amount'),
+      title: '',
       leftBtn: null,
       rightBtn: null,
       onClose: () => {
         this.mobileCalculatorPad = null
         this.mobileCalculatorClose = null
+        this.mobileCalculatorTitleEl = null
         this.contentEl.removeClass('pw-mobile-calculator-active')
       },
     })
     sheet.addClass('pw-mobile-calculator-sheet')
+    this.mobileCalculatorTitleEl = titleEl
     this.mobileCalculatorClose = close
     this.mobileCalculatorPad = new MobileCalculatorPad({
       parentEl: sheet,
@@ -401,6 +402,7 @@ export class MobileTransactionModal extends TransactionModal {
       onKey: (key) => this.handleCalculatorKey(key),
     })
     this.updateAmountDisplay()
+    this.updateCalculatorTitle()
   }
 
   private closeCalculatorPad() {
@@ -410,6 +412,7 @@ export class MobileTransactionModal extends TransactionModal {
     }
     this.mobileCalculatorPad?.remove()
     this.mobileCalculatorPad = null
+    this.mobileCalculatorTitleEl = null
     this.contentEl.removeClass('pw-mobile-calculator-active')
   }
 
@@ -419,6 +422,7 @@ export class MobileTransactionModal extends TransactionModal {
     this.amount = this.mobileCalculatorState.amountValue
     this.mobileCalculatorPad?.update(this.mobileCalculatorState)
     this.updateAmountDisplay()
+    this.updateCalculatorTitle()
   }
 
   private updateAmountDisplay() {
@@ -426,12 +430,14 @@ export class MobileTransactionModal extends TransactionModal {
     const isEmpty = this.amount === ''
     this.mobileAmountEl.textContent = formatMobileHeroAmount(this.amount, this.isRefund)
     this.mobileAmountEl.toggleClass('is-empty', isEmpty)
+  }
 
-    if (this.mobileAmountFormulaEl) {
-      this.mobileAmountFormulaEl.textContent = this.mobileCalculatorState.expressionText
-      this.mobileAmountFormulaEl.toggleClass('is-visible', this.mobileCalculatorState.expressionText !== '')
-      this.mobileAmountFormulaEl.toggleClass('is-warning', this.mobileCalculatorState.isPendingExpression)
-    }
+  private updateCalculatorTitle() {
+    if (!this.mobileCalculatorTitleEl) return
+    const expressionText = this.mobileCalculatorState.expressionText
+    this.mobileCalculatorTitleEl.textContent = expressionText
+    this.mobileCalculatorTitleEl.toggleClass('is-empty', expressionText === '')
+    this.mobileCalculatorTitleEl.toggleClass('is-warning', this.mobileCalculatorState.isPendingExpression)
   }
 
   private formatMobileDate(): string {

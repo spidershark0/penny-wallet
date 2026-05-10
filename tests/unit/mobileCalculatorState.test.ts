@@ -57,6 +57,30 @@ describe('mobile calculator state', () => {
     expect(state.expressionText).toBe('')
   })
 
+  it('keeps the running history while chaining operators', () => {
+    const state = pressAll(['1', '0', '0', '+', '2', '0', '×', '3'])
+    expect(state.amountValue).toBe('3')
+    expect(state.expressionText).toBe('100 + 20 × 3')
+    expect(state.isPendingExpression).toBe(true)
+  })
+
+  it('keeps the running history when a new operator is just pressed', () => {
+    const state = pressAll(['1', '0', '0', '+', '2', '0', '×'])
+    expect(state.amountValue).toBe('120')
+    expect(state.expressionText).toBe('100 + 20 ×')
+  })
+
+  it('replaces a pending operator without growing the history', () => {
+    const state = pressAll(['1', '0', '0', '+', '-'])
+    expect(state.expressionText).toBe('100 -')
+  })
+
+  it('clears the history after = and starts fresh on the next operator', () => {
+    const state = pressAll(['1', '0', '0', '+', '2', '0', '=', '+', '5'])
+    expect(state.amountValue).toBe('5')
+    expect(state.expressionText).toBe('120 + 5')
+  })
+
   it('rounds division results to config decimal places', () => {
     const state = pressAll(['1', '0', '÷', '3', '='], '', 2)
     expect(state.amountValue).toBe('3.33')
