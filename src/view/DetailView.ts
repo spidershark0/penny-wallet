@@ -41,6 +41,14 @@ export class DetailView extends ItemView {
   getIcon() { return 'pw-icon' }
 
   async setState(state: Record<string, unknown>, result: ViewStateResult) {
+    if (state?.resetFilters) {
+      this.filterTypes.clear()
+      this.filterCategories.clear()
+      this.filterWallets.clear()
+      this.filterDateFrom = null
+      this.filterDateTo = null
+      this.filterSearch = ''
+    }
     if (state?.yearMonth) this.currentYearMonth = state.yearMonth as string
     if (state?.filterType) this.filterTypes = new Set([state.filterType as TransactionType])
     if (state?.filterCategory) this.filterCategories = new Set([state.filterCategory as string])
@@ -76,10 +84,6 @@ export class DetailView extends ItemView {
       yearMonth: this.currentYearMonth,
       onMonthChange: (ym) => {
         this.currentYearMonth = ym
-        this.filterCategories.clear()
-        this.filterDateFrom = null
-        this.filterDateTo = null
-        this.filterSearch = ''
         void this.render()
       },
     })
