@@ -807,7 +807,7 @@ button.pw-mobile-delete-row:active {
 }
 
 .pw-mobile-calculator-sheet {
-  --pw-mobile-calculator-bg: var(--background-secondary);
+  --pw-mobile-calculator-bg: var(--interactive-normal);
 
   height: auto;
   min-height: 0;
@@ -826,7 +826,7 @@ button.pw-mobile-delete-row:active {
 
 .pw-mobile-calculator-sheet .pw-bottom-sheet-title {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -868,58 +868,49 @@ button.pw-mobile-calculator-btn {
   height: 54px;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: var(--interactive-normal);
   color: var(--text-normal);
   font-size: 22px;
   box-shadow: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-button.pw-mobile-calculator-btn:hover {
-  background: transparent;
-}
-
-button.pw-mobile-calculator-btn:active {
-  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
-}
-
 button.pw-mobile-calculator-operator,
 button.pw-mobile-calculator-clear {
-  background: transparent;
   color: var(--text-muted);
-}
-
-button.pw-mobile-calculator-operator:hover,
-button.pw-mobile-calculator-clear:hover {
-  background: transparent;
-}
-
-button.pw-mobile-calculator-operator:active,
-button.pw-mobile-calculator-clear:active {
-  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
 }
 
 button.pw-mobile-calculator-equals {
   grid-column: 4;
   grid-row: 4 / span 2;
   height: auto;
-  background: transparent;
-  color: var(--text-normal);
   font-weight: 600;
 }
 
-button.pw-mobile-calculator-equals:hover {
-  background: transparent;
-}
-
-button.pw-mobile-calculator-equals:active {
-  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
-}
-
-.pw-transaction-modal-container .pw-mobile-calculator-btn:focus,
-.pw-transaction-modal-container .pw-mobile-calculator-btn:focus-visible {
+/* Override Obsidian's global button styles */
+button.pw-mobile-calculator-btn:hover,
+button.pw-mobile-calculator-btn:active,
+button.pw-mobile-calculator-btn:focus,
+button.pw-mobile-calculator-btn:focus-visible {
+  background: var(--interactive-normal) !important;
+  color: var(--text-normal) !important;
   outline: none !important;
   box-shadow: none !important;
+}
+
+button.pw-mobile-calculator-operator:hover,
+button.pw-mobile-calculator-operator:active,
+button.pw-mobile-calculator-operator:focus,
+button.pw-mobile-calculator-operator:focus-visible,
+button.pw-mobile-calculator-clear:hover,
+button.pw-mobile-calculator-clear:active,
+button.pw-mobile-calculator-clear:focus,
+button.pw-mobile-calculator-clear:focus-visible {
+  color: var(--text-muted) !important;
+}
+
+button.pw-mobile-calculator-btn.is-pressed {
+  background: var(--background-modifier-hover) !important;
 }
 
 .pw-modal h2 {

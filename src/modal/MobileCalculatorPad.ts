@@ -70,22 +70,44 @@ export class MobileCalculatorPad {
 
   private bindButton(btn: HTMLButtonElement, key: MobileCalculatorKey) {
     let touched = false
-    const press = () => this.onKey(key)
+    let clearPressedTimer: number | null = null
+    const setPressed = () => {
+      if (clearPressedTimer !== null) {
+        window.clearTimeout(clearPressedTimer)
+        clearPressedTimer = null
+      }
+      btn.addClass('is-pressed')
+    }
+    const clearPressed = () => {
+      btn.removeClass('is-pressed')
+    }
+    const scheduleClearPressed = () => {
+      if (clearPressedTimer !== null) window.clearTimeout(clearPressedTimer)
+      clearPressedTimer = window.setTimeout(() => {
+        clearPressedTimer = null
+        clearPressed()
+      }, 90)
+    }
 
+    btn.addEventListener('touchstart', setPressed, { passive: true })
+    btn.addEventListener('pointerdown', setPressed)
+    btn.addEventListener('pointerup', scheduleClearPressed)
+    btn.addEventListener('pointercancel', clearPressed)
+    btn.addEventListener('pointerleave', clearPressed)
+    btn.addEventListener('touchcancel', clearPressed)
     btn.addEventListener('touchend', (e) => {
       e.preventDefault()
       touched = true
-      press()
-      requestAnimationFrame(() => btn.blur())
+      this.onKey(key)
+      scheduleClearPressed()
     })
-
     btn.addEventListener('click', () => {
       if (touched) {
         touched = false
         return
       }
-      press()
-      requestAnimationFrame(() => btn.blur())
+      this.onKey(key)
+      scheduleClearPressed()
     })
   }
 }
