@@ -137,6 +137,7 @@ const translations = {
     'calculator.err.pendingExpression': '請先按 = 完成計算',
     'calculator.err.negativeResult': '計算結果不可為負數',
     'calculator.err.divideByZero': '不可除以 0',
+    'calculator.done': '完成',
 
     // Settings
     'settings.general': '一般設定',
@@ -341,6 +342,7 @@ const translations = {
     'calculator.err.pendingExpression': 'Press = to finish the calculation',
     'calculator.err.negativeResult': 'Calculation result cannot be negative',
     'calculator.err.divideByZero': 'Cannot divide by 0',
+    'calculator.done': 'Done',
 
     'settings.general': 'General',
     'settings.folderName': 'Folder name',

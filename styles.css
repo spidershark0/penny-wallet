@@ -561,7 +561,7 @@ body.pw-bottom-sheet-lock {
 
 .pw-bottom-sheet-title {
   text-align: center;
-  font-size: 16px;
+  font-size: 30px;
   font-weight: 600;
   color: var(--text-normal);
   overflow: hidden;
@@ -826,8 +826,8 @@ button.pw-mobile-delete-row:active {
 
 .pw-mobile-calculator-sheet .pw-bottom-sheet-title {
   color: var(--text-muted);
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 
@@ -881,10 +881,13 @@ button.pw-mobile-calculator-clear {
 }
 
 button.pw-mobile-calculator-equals {
-  grid-column: 4;
-  grid-row: 4 / span 2;
-  height: auto;
   font-weight: 600;
+}
+
+button.pw-mobile-calculator-done {
+  color: var(--interactive-accent);
+  font-size: 16px;
+  font-weight: 500;
 }
 
 /* Override Obsidian's global button styles */
@@ -907,6 +910,13 @@ button.pw-mobile-calculator-clear:active,
 button.pw-mobile-calculator-clear:focus,
 button.pw-mobile-calculator-clear:focus-visible {
   color: var(--text-muted) !important;
+}
+
+button.pw-mobile-calculator-done:hover,
+button.pw-mobile-calculator-done:active,
+button.pw-mobile-calculator-done:focus,
+button.pw-mobile-calculator-done:focus-visible {
+  color: var(--interactive-accent) !important;
 }
 
 button.pw-mobile-calculator-btn.is-pressed {

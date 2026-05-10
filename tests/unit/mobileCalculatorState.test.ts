@@ -170,4 +170,25 @@ describe('mobile calculator state', () => {
     expect(state.amountValue).toBe('20')
     expect(state.expressionText).toBe('')
   })
+
+  it('done resolves a pending expression like =', () => {
+    const state = pressAll(['1', '0', '0', '+', '2', '0', 'done'])
+    expect(state.amountValue).toBe('120')
+    expect(state.expressionText).toBe('')
+    expect(state.isPendingExpression).toBe(false)
+    expect(state.errorKey).toBeUndefined()
+  })
+
+  it('done with no pending expression keeps state unchanged', () => {
+    const state = pressAll(['1', '2', '3', 'done'])
+    expect(state.amountValue).toBe('123')
+    expect(state.isPendingExpression).toBe(false)
+    expect(state.errorKey).toBeUndefined()
+  })
+
+  it('done preserves error and pending flag on negative result', () => {
+    const state = pressAll(['2', '0', '-', '1', '0', '0', 'done'])
+    expect(state.errorKey).toBe('calculator.err.negativeResult')
+    expect(state.isPendingExpression).toBe(true)
+  })
 })

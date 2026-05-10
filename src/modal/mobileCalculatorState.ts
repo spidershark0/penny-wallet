@@ -1,5 +1,5 @@
 export type MobileCalculatorOperator = '+' | '-' | '×' | '÷'
-export type MobileCalculatorKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | MobileCalculatorOperator | '=' | 'C' | '⌫' | '00'
+export type MobileCalculatorKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | MobileCalculatorOperator | '=' | 'C' | '⌫' | '00' | 'done'
 export type MobileCalculatorErrorKey =
   | 'calculator.err.pendingExpression'
   | 'calculator.err.negativeResult'
@@ -40,7 +40,7 @@ export function pressMobileCalculatorKey(
   key: string,
 ): MobileCalculatorState {
   if (key === 'C') return createMobileCalculatorState('', state.decimalPlaces)
-  if (key === '=') return resolveExpression(state)
+  if (key === '=' || key === 'done') return resolveExpression(state)
   if (key === '⌫') return pressBackspace(state)
   if (key === '00') return pressNumberKey(pressNumberKey(state, '0'), '0')
   if (operators.has(key)) return pressOperator(state, key as MobileCalculatorOperator)

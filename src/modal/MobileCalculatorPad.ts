@@ -8,11 +8,11 @@ interface MobileCalculatorPadParams {
 }
 
 const keyRows: MobileCalculatorKey[][] = [
-  ['C', '⌫', '÷', '×'],
-  ['7', '8', '9', '-'],
-  ['4', '5', '6', '+'],
-  ['1', '2', '3'],
-  ['00', '0', '.'],
+  ['÷', '×', '-', '+'],
+  ['7', '8', '9', '='],
+  ['4', '5', '6', 'C'],
+  ['1', '2', '3', '⌫'],
+  ['00', '0', '.', 'done'],
 ]
 
 export class MobileCalculatorPad {
@@ -46,18 +46,12 @@ export class MobileCalculatorPad {
       for (const key of row) {
         const btn = gridEl.createEl('button', {
           cls: this.getButtonClass(key),
-          text: key,
+          text: key === 'done' ? t('calculator.done') : key,
         })
         btn.dataset['calculatorKey'] = key
         this.bindButton(btn, key)
       }
     }
-    const equalsBtn = gridEl.createEl('button', {
-      cls: this.getButtonClass('='),
-      text: '=',
-    })
-    equalsBtn.dataset['calculatorKey'] = '='
-    this.bindButton(equalsBtn, '=')
   }
 
   private getButtonClass(key: MobileCalculatorKey): string {
@@ -65,6 +59,7 @@ export class MobileCalculatorPad {
     if (['+', '-', '×', '÷'].includes(key)) classes.push('pw-mobile-calculator-operator')
     if (key === 'C' || key === '⌫') classes.push('pw-mobile-calculator-clear')
     if (key === '=') classes.push('pw-mobile-calculator-equals')
+    if (key === 'done') classes.push('pw-mobile-calculator-done')
     return classes.join(' ')
   }
 

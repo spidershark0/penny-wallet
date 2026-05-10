@@ -423,6 +423,9 @@ export class MobileTransactionModal extends TransactionModal {
     this.mobileCalculatorPad?.update(this.mobileCalculatorState)
     this.updateAmountDisplay()
     this.updateCalculatorTitle()
+    if (key === 'done' && !this.mobileCalculatorState.errorKey && !this.mobileCalculatorState.isPendingExpression) {
+      this.closeCalculatorPad()
+    }
   }
 
   private updateAmountDisplay() {
