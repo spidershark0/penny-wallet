@@ -82,7 +82,7 @@ export function buildTagInput(
   input.addEventListener('input', updateDropdown)
   input.addEventListener('focus', updateDropdown)
   input.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag() }
+    if ((e.key === 'Enter' && !e.isComposing) || e.key === ',') { e.preventDefault(); addTag() }
     if (e.key === 'Escape') {
       if (!dropdown.isShown()) return
       e.preventDefault()

@@ -45,15 +45,9 @@ export function openBottomSheetShell(params: BottomSheetShellParams): BottomShee
   const { containerEl, title, leftBtn, rightBtn, onClose, leafContext } = params
   let closeTimer: number | null = null
 
-  const backdrop = containerEl.createDiv('pw-bottom-sheet-backdrop')
+  const backdrop = document.body.createDiv('pw-bottom-sheet-backdrop')
   if (leafContext) {
     backdrop.addClass('is-leaf-context')
-    const toolbar = document.querySelector<HTMLElement>(
-      '.workspace-mobile-toolbar, .mobile-toolbar, .mod-mobile-toolbar'
-    )
-    if (toolbar && toolbar.offsetHeight > 0) {
-      backdrop.style.paddingBottom = `${toolbar.offsetHeight + 8}px`
-    }
   }
   const sheet = backdrop.createDiv('pw-bottom-sheet')
   document.body.addClass('pw-bottom-sheet-lock')

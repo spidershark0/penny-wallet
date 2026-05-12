@@ -483,9 +483,9 @@ body.pw-bottom-sheet-lock {
 }
 
 .pw-bottom-sheet-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 200;
   display: flex;
   align-items: flex-end;
   background: rgba(0, 0, 0, 0);
@@ -493,7 +493,7 @@ body.pw-bottom-sheet-lock {
 }
 
 .pw-bottom-sheet-backdrop.is-leaf-context {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 0;
 }
 
 .pw-bottom-sheet-backdrop.is-leaf-context .pw-bottom-sheet {
@@ -561,7 +561,7 @@ body.pw-bottom-sheet-lock {
 
 .pw-bottom-sheet-title {
   text-align: center;
-  font-size: 30px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-normal);
   overflow: hidden;
@@ -826,9 +826,11 @@ button.pw-mobile-delete-row:active {
 
 .pw-mobile-calculator-sheet .pw-bottom-sheet-title {
   color: var(--text-muted);
-  font-size: 20px;
-  font-weight: 400;
+  font-size: 18px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  white-space: normal;
+  overflow: visible;
 }
 
 .pw-mobile-calculator-sheet .pw-bottom-sheet-title.is-empty {

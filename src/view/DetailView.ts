@@ -282,8 +282,13 @@ export class DetailView extends ItemView {
       this.filterSearch = searchInput.value
       this.applyFilters()
     })
+    let imeJustEnded = false
+    searchInput.addEventListener('compositionend', () => {
+      imeJustEnded = true
+      setTimeout(() => { imeJustEnded = false }, 0)
+    })
     searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') searchInput.blur()
+      if (e.key === 'Enter' && !e.isComposing && !imeJustEnded) searchInput.blur()
     })
 
     if (includeFilterButton) {
