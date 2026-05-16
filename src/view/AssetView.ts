@@ -81,7 +81,7 @@ export class AssetView extends ItemView {
 
     for (const { wallet, balance } of walletBalances) {
       if (wallet.status === 'archived') continue
-      const row = walletList.createDiv('pw-wallet-row')
+      const row = walletList.createDiv('pw-asset-wallet-row')
       const left = row.createDiv('pw-wallet-left')
       left.createEl('span', {
         text: t(`walletType.${wallet.type}`),
@@ -96,7 +96,7 @@ export class AssetView extends ItemView {
       })
     }
 
-    const netRow = walletCard.createDiv('pw-wallet-row pw-net-asset-row')
+    const netRow = walletCard.createDiv('pw-asset-wallet-row pw-net-asset-row')
     netRow.createEl('span', { text: t('dash.netAsset'), cls: 'pw-net-label' })
     netRow.createEl('span', {
       text: formatAmount(Math.abs(netAsset), dp),
