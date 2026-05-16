@@ -45,7 +45,7 @@ export function openBottomSheetShell(params: BottomSheetShellParams): BottomShee
   const { containerEl, title, leftBtn, rightBtn, onClose, leafContext } = params
   let closeTimer: number | null = null
 
-  const backdrop = document.body.createDiv('pw-bottom-sheet-backdrop')
+  const backdrop = containerEl.createDiv('pw-bottom-sheet-backdrop')
   if (leafContext) {
     backdrop.addClass('is-leaf-context')
   }
@@ -109,7 +109,7 @@ export function openBottomSheetPicker(params: BottomSheetPickerParams): () => vo
     searchInput = sheet.createEl('input', {
       type: 'text',
       cls: 'pw-bottom-sheet-search',
-      placeholder: 'Search',
+      placeholder: t('ui.search'),
     })
   }
 
@@ -119,7 +119,7 @@ export function openBottomSheetPicker(params: BottomSheetPickerParams): () => vo
     listEl.empty()
     const visibleOptions = filterBottomSheetOptions(options, currentQuery)
     if (visibleOptions.length === 0) {
-      listEl.createDiv({ cls: 'pw-bottom-sheet-empty', text: 'No matches' })
+      listEl.createDiv({ cls: 'pw-bottom-sheet-empty', text: t('ui.noMatches') })
       return
     }
 

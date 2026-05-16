@@ -2,7 +2,7 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
-## [0.0.12] - 2026-05-10
+## [0.0.12] - 2026-05-16
 
 ### Added
 - add mobile calculator state
@@ -19,6 +19,11 @@ All notable changes to PennyWallet will be documented in this file.
 - improve mobile calculator pressed-state visual feedback and unify sheet background
 - replace CSS :has keyboard rules with JS class toggles for iOS keyboard compensation
 - fix CSS lint warnings: duplicate selectors, hex color format, asset wallet row class rename
+
+### Fixed
+- bottom sheet picker search input not typeable on iOS (backdrop attached to body instead of containerEl)
+- bottom sheet search placeholder and no-match text not i18n'd
+- refund checkbox too close to label (added gap)
 
 ## [0.0.11] - 2026-05-09
 

@@ -57,6 +57,8 @@ const translations = {
     'ui.edit': '編輯',
     'ui.archive': '封存',
     'ui.save': '儲存',
+    'ui.search': '搜尋',
+    'ui.noMatches': '沒有符合的選項',
 
     // Dashboard
     'dashboard.title': '帳本總覽',
@@ -268,6 +270,8 @@ const translations = {
     'ui.edit': 'Edit',
     'ui.archive': 'Archive',
     'ui.save': 'Save',
+    'ui.search': 'Search',
+    'ui.noMatches': 'No matches',
 
     'dashboard.title': 'Finance Overview',
     'dash.income': 'Income',

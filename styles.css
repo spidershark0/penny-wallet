@@ -376,6 +376,7 @@ canvas {
 
 .pw-refund-block .pw-mobile-row {
   padding-left: 0;
+  gap: 10px;
 }
 
 .pw-mobile-row-label {
@@ -512,6 +513,8 @@ body.pw-bottom-sheet-lock {
   transition: transform 200ms ease-out;
   margin: 0 8px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .pw-bottom-sheet-backdrop.is-open .pw-bottom-sheet {
