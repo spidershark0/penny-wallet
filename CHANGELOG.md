@@ -17,6 +17,8 @@ All notable changes to PennyWallet will be documented in this file.
 - move calculator formula to sheet title bar
 - rework mobile calculator layout (all operators on top row; =/C/⌫/Done in right column)
 - improve mobile calculator pressed-state visual feedback and unify sheet background
+- replace CSS :has keyboard rules with JS class toggles for iOS keyboard compensation
+- fix CSS lint warnings: duplicate selectors, hex color format, asset wallet row class rename
 
 ## [0.0.11] - 2026-05-09
 
