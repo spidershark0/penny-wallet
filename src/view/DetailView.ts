@@ -23,6 +23,8 @@ export class DetailView extends ItemView {
   private catPanelOpen: boolean = false
   private accountPanelOpen: boolean = false
 
+  private viewportCleanup: (() => void) | undefined
+
   // Refs for lightweight list updates (search)
   private cachedTransactions: Transaction[] = []
   private cachedDp: 0 | 2 = 0
@@ -60,10 +62,27 @@ export class DetailView extends ItemView {
     this.registerEvent(
       (this.app.workspace as Events).on('penny-wallet:refresh', () => { void this.render() })
     )
+    if (Platform.isMobile && window.visualViewport) {
+      const el = this.contentEl
+      const update = () => {
+        const kbHeight = Math.max(0, window.innerHeight - window.visualViewport!.height)
+        if (kbHeight > 50) {
+          el.style.setProperty('--pw-keyboard-h', `${kbHeight}px`)
+          el.addClass('pw-keyboard-open')
+        } else {
+          el.style.removeProperty('--pw-keyboard-h')
+          el.removeClass('pw-keyboard-open')
+        }
+      }
+      window.visualViewport.addEventListener('resize', update)
+      this.viewportCleanup = () => window.visualViewport?.removeEventListener('resize', update)
+    }
     await this.render()
   }
 
   onClose(): Promise<void> {
+    this.viewportCleanup?.()
+    this.viewportCleanup = undefined
     this.contentEl.empty()
     return Promise.resolve()
   }
@@ -290,6 +309,10 @@ export class DetailView extends ItemView {
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.isComposing && !imeJustEnded) searchInput.blur()
     })
+    if (Platform.isMobile) {
+      searchInput.addEventListener('focus', () => this.contentEl.addClass('pw-keyboard-open'))
+      searchInput.addEventListener('blur', () => this.contentEl.removeClass('pw-keyboard-open'))
+    }
 
     if (includeFilterButton) {
       const activeCount = this.countActiveFilters()

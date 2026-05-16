@@ -110,6 +110,20 @@ export class MobileTransactionModal extends TransactionModal {
         }
       }, 0)
     })
+
+    if (window.visualViewport) {
+      const el = this.contentEl
+      const update = () => {
+        const kbHeight = Math.max(0, window.innerHeight - window.visualViewport!.height)
+        if (kbHeight > 50) {
+          el.style.setProperty('--pw-keyboard-h', `${kbHeight}px`)
+        } else {
+          el.style.removeProperty('--pw-keyboard-h')
+        }
+      }
+      window.visualViewport.addEventListener('resize', update)
+      this.viewportCleanups.push(() => window.visualViewport?.removeEventListener('resize', update))
+    }
   }
 
   private renderMobileTabs(config: PennyWalletConfig) {

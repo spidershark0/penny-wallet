@@ -127,15 +127,7 @@ canvas {
 
 /* ── Modal ── */
 
-/* Remove Obsidian theme border from penny-wallet modals */
-.modal:has(.pw-modal) {
-  border: none;
-}
 
-/* Mobile: when any input in our modal is focused (keyboard visible),
-   shift the modal to the top so it clears the keyboard.
-   Restricted to touch devices (pointer: coarse) so desktop focus doesn't trigger this.
-   Uses :has() which is supported in WKWebView (iOS 15.4+). */
 @media (pointer: coarse) {
   /* TransactionModal: keep modal at top once user starts interacting.
      Class added by JS on first focusin — stays until modal closes.
@@ -469,12 +461,12 @@ canvas {
 }
 
 /* iOS WKWebView doesn't shrink viewport when keyboard rises; pad the scroll
-   container so scrollIntoView has room to lift the focused row above the keyboard. */
+   container so scrollIntoView has room to lift the focused row above the keyboard.
+   --pw-keyboard-h is set by visualViewport listener (exact px); falls back to 60vh. */
 @media (pointer: coarse) {
-  .pw-mobile-content:has(.pw-mobile-note-input:focus) .pw-mobile-rows,
   .pw-mobile-content.pw-mobile-text-focus .pw-mobile-rows,
   .pw-mobile-content.pw-bottom-sheet-active .pw-mobile-rows {
-    padding-bottom: 60vh;
+    padding-bottom: var(--pw-keyboard-h, 60vh);
   }
 }
 
@@ -1982,13 +1974,13 @@ button.pw-pill {
     padding-bottom: calc(8px + var(--mobile-toolbar-height, 48px) + env(safe-area-inset-bottom, 0px));
   }
 
-  .pw-detail:has(.pw-search-input:focus) .pw-subtotal-row {
+  .pw-detail.pw-keyboard-open .pw-subtotal-row {
     display: none;
   }
 
   /* When keyboard is open, constrain list to visible area above keyboard.
-     35vh is conservative: fits above keyboard on all common iPhone sizes (portrait). */
-  .pw-detail:has(.pw-search-input:focus) .pw-detail-list-wrap {
+     --pw-keyboard-h is set by visualViewport listener (JS also sets pw-keyboard-open). */
+  .pw-detail.pw-keyboard-open .pw-detail-list-wrap {
     flex: none;
     max-height: 35vh;
   }
