@@ -40,7 +40,7 @@ export class DetailView extends ItemView {
 
   getViewType() { return DETAIL_VIEW_TYPE }
   getDisplayText() { return t('detail.title') }
-  getIcon() { return 'pw-icon' }
+  getIcon() { return 'wallet' }
 
   async setState(state: Record<string, unknown>, result: ViewStateResult) {
     if (state?.resetFilters) {

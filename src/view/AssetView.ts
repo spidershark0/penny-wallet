@@ -26,7 +26,7 @@ export class AssetView extends ItemView {
 
   getViewType() { return ASSET_VIEW_TYPE }
   getDisplayText() { return t('asset.title') }
-  getIcon() { return 'pw-icon' }
+  getIcon() { return 'wallet' }
 
   async onOpen() {
     this.registerEvent(
