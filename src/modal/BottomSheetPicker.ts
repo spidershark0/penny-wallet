@@ -166,15 +166,43 @@ interface FilterSheetParams {
 }
 
 export function openFilterSheet(params: FilterSheetParams): () => void {
-  const { sheet, close } = openBottomSheetShell({
-    containerEl: params.containerEl,
-    title: params.title,
-    leftBtn: { label: t('ui.cancel'), onClick: (c) => { params.onCancel(); c() } },
-    rightBtn: { label: t('detail.filterDone'), onClick: (c) => { params.onDone(); c() } },
-    onClose: params.onClose,
-    leafContext: true,
+  const { containerEl, title, onCancel, onDone, onClose } = params
+  let closeTimer: number | null = null
+
+  // Leaf context: attach backdrop to document.body so position:fixed escapes
+  // the workspace leaf's transformed ancestor and covers the Obsidian toolbar.
+  const backdrop = document.body.createDiv('pw-bottom-sheet-backdrop is-leaf-context')
+  const sheet = backdrop.createDiv('pw-bottom-sheet pw-filter-sheet')
+  document.body.addClass('pw-bottom-sheet-lock')
+  containerEl.addClass('pw-bottom-sheet-active')
+
+  const close = () => {
+    if (closeTimer !== null) return
+    backdrop.addClass('is-closing')
+    document.body.removeClass('pw-bottom-sheet-lock')
+    containerEl.removeClass('pw-bottom-sheet-active')
+    containerEl.removeClass('pw-mobile-text-focus')
+    closeTimer = window.setTimeout(() => {
+      backdrop.remove()
+      onClose?.()
+      closeTimer = null
+    }, 200)
+  }
+
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) close()
   })
-  sheet.addClass('pw-filter-sheet')
+
+  sheet.createDiv('pw-bottom-sheet-handle')
+  const bar = sheet.createDiv('pw-bottom-sheet-bar')
+
+  const cancelBtn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn', text: t('ui.cancel') })
+  cancelBtn.addEventListener('click', () => { onCancel(); close() })
+
+  bar.createEl('span', { cls: 'pw-bottom-sheet-title', text: title })
+
+  const doneBtn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn-primary', text: t('detail.filterDone') })
+  doneBtn.addEventListener('click', () => { onDone(); close() })
 
   const body = sheet.createDiv('pw-filter-sheet-body')
   params.buildBody(body)
@@ -183,6 +211,8 @@ export function openFilterSheet(params: FilterSheetParams): () => void {
     const footer = sheet.createDiv('pw-filter-sheet-footer')
     params.buildFooter(footer)
   }
+
+  requestAnimationFrame(() => backdrop.addClass('is-open'))
 
   return close
 }
