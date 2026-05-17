@@ -1,4 +1,4 @@
-import { Notice, ObsidianProtocolData, Platform, Plugin, WorkspaceLeaf, addIcon } from 'obsidian'
+import { Notice, ObsidianProtocolData, Platform, Plugin, WorkspaceLeaf } from 'obsidian'
 import { WalletFile } from './io/WalletFile'
 import { TransactionModal } from './modal/TransactionModal'
 import { MobileTransactionModal } from './modal/MobileTransactionModal'
@@ -9,15 +9,12 @@ import { PennyWalletSettingTab } from './settings/SettingTab'
 import { ValidationModal } from './modal/ValidationModal'
 import { TransactionModalParams, TransactionType } from './types'
 import { initI18n, t } from './i18n'
-import pluginIcon from './assets/plugin-icon.svg'
 
 export default class PennyWalletPlugin extends Plugin {
   walletFile!: WalletFile
 
   async onload() {
     initI18n()
-
-    addIcon('pw-icon', pluginIcon.replace(/^<svg[^>]*>|<\/svg>\s*$/g, ''))
 
     this.walletFile = new WalletFile(this.app)
 
@@ -26,7 +23,7 @@ export default class PennyWalletPlugin extends Plugin {
     this.registerView(DETAIL_VIEW_TYPE, (leaf) => new DetailView(leaf, this.walletFile))
     this.registerView(ASSET_VIEW_TYPE, (leaf) => new AssetView(leaf, this.walletFile))
 
-    this.addRibbonIcon('pw-icon', 'Penny wallet', () => { void this.openDashboard() })
+    this.addRibbonIcon('wallet', 'Penny wallet', () => { void this.openDashboard() })
 
     this.addCommand({ id: 'open-dashboard', name: 'Open finance overview', callback: () => { void this.openDashboard() } })
     this.addCommand({ id: 'open-asset', name: 'Open assets', callback: () => { void this.openAssetView() } })

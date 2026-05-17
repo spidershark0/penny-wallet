@@ -29,7 +29,7 @@ export class DashboardView extends ItemView {
 
   getViewType() { return DASHBOARD_VIEW_TYPE }
   getDisplayText() { return t('dashboard.title') }
-  getIcon() { return 'pw-icon' }
+  getIcon() { return 'wallet' }
 
   async onOpen() {
     this.registerEvent(
