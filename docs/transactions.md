@@ -93,11 +93,20 @@ Moving money between two of your own accounts — including credit card payments
 
 **From iOS Shortcuts:** see [URI Handler & iOS Shortcuts](./uri-handler)
 
+### Mobile entry
+
+On phones (`body.is-phone`), the transaction form switches to a touch-friendly layout:
+
+- **Amount** opens a calculator sheet — numpad, `00`, ⌫, and a formula bar in the sheet title. Press **Done** to commit the computed value back into the field.
+- **Wallet**, **Category**, and **Tag** fields open as bottom-sheet pickers with search; tags and categories can be created inline from the picker.
+
+<img src="/transaction-modal-mobile.png" alt="Mobile calculator sheet" width="320" />
+
 ---
 
 ## Editing and Deleting
 
-Open the **Transactions** view, find the entry, and click the **edit (✏)** or **delete (🗑)** icon on the right side of the row.
+Open the **Transactions** view, find the entry, and click the **edit (✏)** icon on the right side of the row. **Delete** lives inside the edit modal — open the entry to edit, then use the delete action (a confirmation dialog appears before deletion).
 
 Editing supports changing the **date** (including moving the transaction to a different month), the type, account, category, note, and amount.
 

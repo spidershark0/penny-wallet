@@ -8,6 +8,8 @@ PennyWallet has three views. The **Finance Overview** can be opened from the rib
 
 The main dashboard. Open it by clicking the **PennyWallet icon** in the left ribbon, or run **PennyWallet: Open Finance Overview** from the Command Palette.
 
+![Finance overview](/finance-overview.png)
+
 The header also contains two navigation buttons:
 - **Transactions** — switch to the Transactions list view
 - **Assets** — switch to the assets view
@@ -51,17 +53,21 @@ Each legend entry shows the category name, amount, and percentage. Small categor
 
 A full list of all transactions for the selected month, with filters and subtotals.
 
+![Transactions view](/transactions-view.png)
+
 ### Filters
 
 - **Type pills** — multi-select: All / Expense / Income / Transfer (tap multiple to combine)
+- **Wallet pills** — multi-select; pills are tinted per account so the active filter is visible at a glance
 - **Category dropdown** — checklist of categories present in the filtered results; select any combination to narrow further
 - **Keyword search** — filters transactions whose note contains the search text
+- **Filter sheet (detail view)** — a shared header opens a sheet for picking account and date range; on mobile, the sheet backdrop covers the Obsidian toolbar so the sheet owns the screen
 
 ### Transaction Rows
 
 Each row shows: date, type badge, category, note, account (or From → To for transfers), and amount.
 
-On desktop, hover a row to reveal **✏** edit and **🗑** delete. On mobile, actions stay visible. A confirmation dialog appears before deletion. Refund expenses appear as positive expense reversals, visually distinct from income.
+On desktop, hover a row to reveal the **✏** edit action. On mobile, the edit affordance stays visible. Delete now lives inside the edit modal (a confirmation dialog appears before deletion). Refund expenses appear as positive expense reversals, visually distinct from income.
 
 ### Subtotals
 
@@ -72,6 +78,8 @@ A fixed bar at the bottom always shows **Expense Subtotal** and **Income Subtota
 ## Assets
 
 An assets-focused view for medium-term financial tracking. Open it from the **Assets** button in the Finance Overview header, or run **PennyWallet: Open assets** from the Command Palette.
+
+![Assets view](/asset-view.png)
 
 ### Range Selector
 
