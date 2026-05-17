@@ -2,16 +2,25 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
-## [0.0.13] - 2026-05-16
+## [0.0.13] - 2026-05-17
 
 ### Changed
-- replace CSS :has keyboard rules with JS class toggles for iOS keyboard compensation
+- replace CSS `:has()` keyboard rules with JS class toggles for iOS keyboard compensation
+- remove all `!important` declarations (79 → 0) by bumping selector specificity (doubled/tripled `.pw-transaction-modal-container` / `.pw-bottom-sheet` / etc.) to beat Obsidian's mobile modal rules
+- unify done-button class name: `pw-bottom-sheet-btn-primary` → `pw-bottom-sheet-btn--done` so filter sheet's Done button is bold + right-aligned
 - fix CSS lint warnings: duplicate selectors, hex color format, asset wallet row class rename
+- rename i18n keys `cat.*` / `walletType.*` / `type.*` → `label.cat.*` / `label.walletType.*` / `label.type.*` so key namespace encodes UI role
+- rewrite 19 en UI strings to sentence case per Obsidian style guideline (e.g., "Add Transaction" → "Add transaction", "Net Assets" → "Net assets")
 
 ### Fixed
-- bottom sheet picker search input not typeable on iOS (backdrop attached to body instead of containerEl)
+- filter sheet backdrop now covers Obsidian's bottom toolbar on mobile (`openFilterSheet` extracted from shared shell; backdrop attached to `document.body` to escape leaf transformed-ancestor containing block)
+- bottom sheet picker search input not typeable on iOS (backdrop attached to containerEl)
 - bottom sheet search placeholder and no-match text not i18n'd
 - refund checkbox too close to label (added gap)
+
+### Internal
+- add stylelint with minimal rules (`declaration-no-important`, `selector-disallowed-list` for `:has()`, `no-duplicate-selectors`, `declaration-block-no-duplicate-properties`, `color-hex-length`) — run via `npm run lint:css`
+- add i18n sentence-case linter (`scripts/lint-i18n.mjs`) that skips `label.*` namespace — run via `npm run lint:i18n`
 
 ## [0.0.12] - 2026-05-16
 
