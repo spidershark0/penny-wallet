@@ -146,32 +146,34 @@ canvas {
 
 /* ── Mobile full-screen transaction modal ── */
 
-.pw-transaction-modal-container {
-  padding: 0 !important;
-  align-items: stretch !important;
+/* Tripled .pw-transaction-modal-container beats Obsidian's
+   body.is-phone .modal-container (0,2,1) and body.is-phone .modal-container .modal (0,3,1). */
+.pw-transaction-modal-container.pw-transaction-modal-container.pw-transaction-modal-container {
+  padding: 0;
+  align-items: stretch;
 }
 
-.pw-transaction-modal-container .modal {
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+.pw-transaction-modal-container.pw-transaction-modal-container.pw-transaction-modal-container .modal {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
 }
 
 .pw-transaction-modal-container .modal-close-button {
-  display: none !important;
+  display: none;
 }
 
 /* Hidden native date input used to trigger the mobile date picker on tap */
 .pw-hidden-date-trigger {
-  position: absolute !important;
-  opacity: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
   pointer-events: none;
 }
 
@@ -263,14 +265,15 @@ canvas {
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
-/* Scope all tab rules under container to beat Obsidian's global button styles */
-.pw-transaction-modal-container .pw-mobile-tab {
+/* Doubled .pw-transaction-modal-container so .pw-mobile-tab beats Obsidian's
+   body.is-phone .modal-container button:hover (0,3,2) without !important. */
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab {
   flex: 1;
-  background: none !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
   padding: 14px 10px;
   font-size: 13px;
   color: var(--text-muted);
@@ -279,24 +282,24 @@ canvas {
   -webkit-tap-highlight-color: transparent;
 }
 
-.pw-transaction-modal-container .pw-mobile-tab:hover,
-.pw-transaction-modal-container .pw-mobile-tab:active,
-.pw-transaction-modal-container .pw-mobile-tab:focus,
-.pw-transaction-modal-container .pw-mobile-tab:focus-visible {
-  background: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab:hover,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab:active,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab:focus,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab:focus-visible {
+  background: none;
+  outline: none;
+  box-shadow: none;
   color: var(--text-muted);
 }
 
-.pw-transaction-modal-container .pw-mobile-tab.is-active,
-.pw-transaction-modal-container .pw-mobile-tab.is-active:hover,
-.pw-transaction-modal-container .pw-mobile-tab.is-active:active,
-.pw-transaction-modal-container .pw-mobile-tab.is-active:focus,
-.pw-transaction-modal-container .pw-mobile-tab.is-active:focus-visible {
-  background: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab.is-active,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab.is-active:hover,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab.is-active:active,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab.is-active:focus,
+.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-tab.is-active:focus-visible {
+  background: none;
+  outline: none;
+  box-shadow: none;
   color: var(--interactive-accent);
   font-weight: 600;
 }
@@ -391,7 +394,7 @@ canvas {
   flex: 1;
   font-size: 16px;
   color: var(--text-normal);
-  text-align: right !important;
+  text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -440,21 +443,22 @@ canvas {
   font-size: 16px; /* prevent iOS auto-zoom */
 }
 
-/* Note text input — scoped to beat Obsidian's input[type=text] defaults */
-.pw-transaction-modal-container .pw-mobile-note-input {
+/* Tripled .pw-transaction-modal-container to beat Obsidian's
+   body.is-phone .modal input[type=text] (0,3,2) attribute selector. */
+.pw-transaction-modal-container.pw-transaction-modal-container.pw-transaction-modal-container .pw-mobile-note-input {
   flex: 1;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   font-size: 16px;
   color: var(--text-normal);
   text-align: right;
-  outline: none !important;
+  outline: none;
   padding: 0;
   min-width: 0;
   appearance: none;
   -webkit-appearance: none;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .pw-mobile-note-input::placeholder {
@@ -544,11 +548,13 @@ body.pw-bottom-sheet-lock {
   flex-shrink: 0;
 }
 
-.pw-bottom-sheet-btn {
+/* Doubled .pw-bottom-sheet prefix beats Obsidian's body.is-phone .modal-container button (0,3,2)
+   without !important. All sibling rules (--done, .is-selected, etc.) doubled for consistent cascade. */
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-btn {
   justify-self: start;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   color: var(--interactive-accent);
   font-size: 15px;
   padding: 8px 0;
@@ -568,13 +574,13 @@ body.pw-bottom-sheet-lock {
   width: 64px;
 }
 
-.pw-bottom-sheet-search {
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-search {
   margin: 10px 14px 8px;
-  width: calc(100% - 28px) !important;
+  width: calc(100% - 28px);
   box-sizing: border-box;
   flex-shrink: 0;
   font-size: 16px;
-  border-radius: 8px !important;
+  border-radius: 8px;
 }
 
 .pw-bottom-sheet-options {
@@ -585,32 +591,32 @@ body.pw-bottom-sheet-lock {
   padding-bottom: 8px;
 }
 
-.pw-bottom-sheet-option {
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-option {
   width: 100%;
   min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   color: var(--text-normal);
   font-size: 16px;
   text-align: left;
   padding: 0 20px;
 }
 
-.pw-bottom-sheet-option:active {
-  background: var(--background-modifier-hover) !important;
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-option:active {
+  background: var(--background-modifier-hover);
 }
 
-.pw-bottom-sheet-option.is-selected {
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-option.is-selected {
   color: var(--interactive-accent);
   font-weight: 600;
 }
 
-.pw-bottom-sheet-option.is-selected::after {
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-option.is-selected::after {
   content: '✓';
   color: var(--interactive-accent);
   font-size: 16px;
@@ -631,7 +637,7 @@ body.pw-bottom-sheet-lock {
   position: relative; /* anchor for .is-dimmed ::after overlay */
 }
 
-.pw-bottom-sheet-bar .pw-bottom-sheet-btn--done {
+.pw-bottom-sheet.pw-bottom-sheet .pw-bottom-sheet-btn--done {
   justify-self: end;
   font-weight: 600;
 }
@@ -648,27 +654,32 @@ body.pw-bottom-sheet-lock {
   align-content: flex-start;
 }
 
-.pw-tag-picker-chip {
+/* Chip appears in two contexts: bottom sheet picker + modal-side .pw-mobile-tag-chips.
+   Doubled prefix in both so chip styles beat Obsidian's modal button rules. */
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-chip,
+.pw-mobile-tag-chips.pw-mobile-tag-chips .pw-tag-picker-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: color-mix(in srgb, var(--interactive-accent) 30%, var(--background-primary) 70%) !important;
-  color: var(--text-normal) !important;
-  border: none !important;
-  border-radius: 999px !important;
-  padding: 6px 12px !important;
+  background: color-mix(in srgb, var(--interactive-accent) 30%, var(--background-primary) 70%);
+  color: var(--text-normal);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: none !important;
+  box-shadow: none;
   transition: background-color 200ms ease-out, color 200ms ease-out, opacity 200ms ease-out;
 }
 
-.pw-tag-picker-chip.is-selected {
-  background: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-chip.is-selected,
+.pw-mobile-tag-chips.pw-mobile-tag-chips .pw-tag-picker-chip.is-selected {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
-.pw-tag-picker-chip.is-disabled {
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-chip.is-disabled,
+.pw-mobile-tag-chips.pw-mobile-tag-chips .pw-tag-picker-chip.is-disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -681,14 +692,14 @@ body.pw-bottom-sheet-lock {
   padding: 24px 12px;
 }
 
-.pw-tag-picker-add-row {
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-add-row {
   width: 100%;
   min-height: 48px;
-  background: transparent !important;
-  border: none !important;
+  background: transparent;
+  border: none;
   border-top: 1px solid var(--background-modifier-border);
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  border-radius: 0;
+  box-shadow: none;
   color: var(--interactive-accent);
   font-size: 16px;
   text-align: left;
@@ -696,30 +707,30 @@ body.pw-bottom-sheet-lock {
   flex-shrink: 0;
 }
 
-.pw-tag-picker-add-row:active {
-  background: var(--background-modifier-hover) !important;
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-add-row:active {
+  background: var(--background-modifier-hover);
 }
 
-.pw-tag-picker-add-row.is-disabled {
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-add-row.is-disabled {
   color: var(--text-muted);
   cursor: default;
 }
 
-.pw-tag-picker-add-row.is-disabled:active {
-  background: transparent !important;
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-add-row.is-disabled:active {
+  background: transparent;
 }
 
 /* Inline add button — sits between search and chip area, always visible
    above the keyboard when it rises. */
-.pw-tag-picker-inline-add {
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-inline-add {
   width: calc(100% - 28px);
   margin: 4px 14px 0;
   min-height: 40px;
-  background: transparent !important;
-  border: none !important;
+  background: transparent;
+  border: none;
   border-bottom: 1px solid var(--background-modifier-border);
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  border-radius: 0;
+  box-shadow: none;
   color: var(--interactive-accent);
   font-size: 15px;
   text-align: left;
@@ -727,17 +738,17 @@ body.pw-bottom-sheet-lock {
   flex-shrink: 0;
 }
 
-.pw-tag-picker-inline-add:active {
-  background: var(--background-modifier-hover) !important;
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-inline-add:active {
+  background: var(--background-modifier-hover);
 }
 
-.pw-tag-picker-inline-add.is-disabled {
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-inline-add.is-disabled {
   color: var(--text-muted);
   cursor: default;
 }
 
-.pw-tag-picker-inline-add.is-disabled:active {
-  background: transparent !important;
+.pw-bottom-sheet.pw-bottom-sheet .pw-tag-picker-inline-add.is-disabled:active {
+  background: transparent;
 }
 
 /* Modal-side mobile tag row — chips OR placeholder, whole row taps to open picker.
@@ -887,37 +898,38 @@ button.pw-mobile-calculator-done {
   font-weight: 500;
 }
 
-/* Override Obsidian's global button styles */
-button.pw-mobile-calculator-btn:hover,
-button.pw-mobile-calculator-btn:active,
-button.pw-mobile-calculator-btn:focus,
-button.pw-mobile-calculator-btn:focus-visible {
-  background: var(--interactive-normal) !important;
-  color: var(--text-normal) !important;
-  outline: none !important;
-  box-shadow: none !important;
+/* Doubled .pw-transaction-modal-container beats Obsidian's body.is-phone .modal-container button:hover (0,3,2).
+   .is-pressed needs triple to beat the doubled hover rule above it. */
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-btn:hover,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-btn:active,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-btn:focus,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-btn:focus-visible {
+  background: var(--interactive-normal);
+  color: var(--text-normal);
+  outline: none;
+  box-shadow: none;
 }
 
-button.pw-mobile-calculator-operator:hover,
-button.pw-mobile-calculator-operator:active,
-button.pw-mobile-calculator-operator:focus,
-button.pw-mobile-calculator-operator:focus-visible,
-button.pw-mobile-calculator-clear:hover,
-button.pw-mobile-calculator-clear:active,
-button.pw-mobile-calculator-clear:focus,
-button.pw-mobile-calculator-clear:focus-visible {
-  color: var(--text-muted) !important;
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-operator:hover,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-operator:active,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-operator:focus,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-operator:focus-visible,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-clear:hover,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-clear:active,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-clear:focus,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-clear:focus-visible {
+  color: var(--text-muted);
 }
 
-button.pw-mobile-calculator-done:hover,
-button.pw-mobile-calculator-done:active,
-button.pw-mobile-calculator-done:focus,
-button.pw-mobile-calculator-done:focus-visible {
-  color: var(--interactive-accent) !important;
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-done:hover,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-done:active,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-done:focus,
+.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-done:focus-visible {
+  color: var(--interactive-accent);
 }
 
-button.pw-mobile-calculator-btn.is-pressed {
-  background: var(--background-modifier-hover) !important;
+.pw-transaction-modal-container.pw-transaction-modal-container.pw-transaction-modal-container button.pw-mobile-calculator-btn.is-pressed {
+  background: var(--background-modifier-hover);
 }
 
 .pw-modal h2 {
@@ -1381,8 +1393,8 @@ button.pw-mobile-calculator-btn.is-pressed {
 .pw-net-asset-row {
   margin-top: 6px;
   padding-top: 8px;
-  border-top: 2px solid var(--background-modifier-border) !important;
-  border-bottom: none !important;
+  border-top: 2px solid var(--background-modifier-border);
+  border-bottom: none;
 }
 
 .pw-net-label {
@@ -1681,20 +1693,20 @@ button.pw-pill {
 
 /* iOS sticky :active fix — prevent Obsidian global button styles from overriding */
 .pw-pill:active:not(.is-active) {
-  background: color-mix(in srgb, var(--pw-pill-color, var(--text-normal)) 8%, transparent) !important;
-  color: var(--text-muted) !important;
+  background: color-mix(in srgb, var(--pw-pill-color, var(--text-normal)) 8%, transparent);
+  color: var(--text-muted);
 }
 
 .pw-pill.is-active:active {
-  background: var(--pw-pill-tint, var(--background-secondary)) !important;
-  border-color: var(--pw-pill-color, var(--text-normal)) !important;
-  color: var(--pw-pill-color, var(--text-normal)) !important;
+  background: var(--pw-pill-tint, var(--background-secondary));
+  border-color: var(--pw-pill-color, var(--text-normal));
+  color: var(--pw-pill-color, var(--text-normal));
 }
 
-.pw-search-input {
+.pw-detail-search-row .pw-search-input {
   width: 100%;
   padding: 8px 12px;
-  border-radius: 6px !important;
+  border-radius: 6px;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-normal);
@@ -1702,7 +1714,7 @@ button.pw-pill {
   box-sizing: border-box;
 }
 
-.pw-search-input:focus {
+.pw-detail-search-row .pw-search-input:focus {
   outline: none;
   border-color: var(--interactive-accent);
 }
@@ -1819,9 +1831,9 @@ button.pw-pill {
 
 /* Date inputs inside filter sheet body — match desktop input style */
 .pw-filter-sheet-body .pw-date-input {
-  background: var(--background-modifier-form-field) !important;
+  background: var(--background-modifier-form-field);
   padding: 8px 12px;
-  border-radius: 6px !important;
+  border-radius: 6px;
   border: 1px solid var(--background-modifier-border);
   font-size: 13px;
 }
@@ -2593,11 +2605,12 @@ select.pw-add-wallet-input {
   color: var(--text-normal);
 }
 
-.pw-tag-input-wrapper .pw-tag-input {
+/* Tripled .pw-tag-input-wrapper to beat Obsidian's body.is-phone .modal input[type=text] (0,3,2). */
+.pw-tag-input-wrapper.pw-tag-input-wrapper.pw-tag-input-wrapper .pw-tag-input {
   flex: 1;
   min-width: 80px;
-  border: none !important;
-  box-shadow: none !important;
+  border: none;
+  box-shadow: none;
   background: transparent;
   outline: none;
   font-size: 13px;

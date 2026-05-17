@@ -83,7 +83,7 @@ export function openBottomSheetShell(params: BottomSheetShellParams): BottomShee
   const titleEl = bar.createEl('span', { cls: 'pw-bottom-sheet-title', text: title })
 
   if (rightBtn) {
-    const btn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn-primary', text: rightBtn.label })
+    const btn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn--done', text: rightBtn.label })
     btn.addEventListener('click', () => rightBtn.onClick(close))
   } else {
     bar.createSpan('pw-bottom-sheet-spacer')
@@ -201,7 +201,7 @@ export function openFilterSheet(params: FilterSheetParams): () => void {
 
   bar.createEl('span', { cls: 'pw-bottom-sheet-title', text: title })
 
-  const doneBtn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn-primary', text: t('detail.filterDone') })
+  const doneBtn = bar.createEl('button', { cls: 'pw-bottom-sheet-btn pw-bottom-sheet-btn--done', text: t('detail.filterDone') })
   doneBtn.addEventListener('click', () => { onDone(); close() })
 
   const body = sheet.createDiv('pw-filter-sheet-body')
