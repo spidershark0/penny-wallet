@@ -1704,6 +1704,7 @@ button.pw-pill {
 }
 
 .pw-detail-search-row .pw-search-input {
+  flex: 1;
   width: 100%;
   padding: 8px 12px;
   border-radius: 6px;
@@ -1786,10 +1787,6 @@ button.pw-pill {
 
 .pw-detail-search-row:not(:first-child) {
   margin-top: 8px;
-}
-
-.pw-detail-search-row .pw-search-input {
-  flex: 1;
 }
 
 .pw-filter-btn {
