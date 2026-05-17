@@ -172,7 +172,7 @@ export class PennyWalletSettingTab extends PluginSettingTab {
       const info = row.createDiv('pw-wallet-row-info')
       info.createSpan({ text: wallet.name, cls: 'pw-wallet-row-name' })
       info.createSpan({
-        text: t(`walletType.${wallet.type}`),
+        text: t(`label.walletType.${wallet.type}`),
         cls: `pw-wallet-badge pw-badge-${wallet.type}`,
       })
       const descSpan = info.createSpan({
@@ -236,7 +236,7 @@ export class PennyWalletSettingTab extends PluginSettingTab {
 
     const info = row.createDiv('pw-wallet-row-info')
     info.createSpan({ text: wallet.name, cls: 'pw-wallet-row-name' })
-    info.createSpan({ text: t(`walletType.${wallet.type}`), cls: `pw-wallet-badge pw-badge-${wallet.type}` })
+    info.createSpan({ text: t(`label.walletType.${wallet.type}`), cls: `pw-wallet-badge pw-badge-${wallet.type}` })
 
     row.createSpan({ text: displayBalance, cls: `pw-wallet-row-balance${isDebt ? ' is-debt' : ''}` })
 
@@ -320,7 +320,7 @@ export class PennyWalletSettingTab extends PluginSettingTab {
     const typeSelect = typeField.createEl('select', { cls: 'pw-add-wallet-input' })
     const walletTypes: WalletType[] = ['cash', 'bank', 'creditCard']
     for (const wt of walletTypes) {
-      typeSelect.createEl('option', { value: wt, text: t(`walletType.${wt}`) })
+      typeSelect.createEl('option', { value: wt, text: t(`label.walletType.${wt}`) })
     }
     typeSelect.value = 'cash'
 

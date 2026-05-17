@@ -131,7 +131,7 @@ export class MobileTransactionModal extends TransactionModal {
     const types: TransactionType[] = ['expense', 'income', 'transfer']
     for (const tp of types) {
       const tab = this.mobileTabsEl.createEl('button', {
-        text: t(`type.${tp}`),
+        text: t(`label.type.${tp}`),
         cls: 'pw-mobile-tab' + (this.type === tp ? ' is-active' : ''),
       })
       tab.addEventListener('click', () => {

@@ -162,7 +162,7 @@ export class TransactionModal extends Modal {
     const types: TransactionType[] = ['expense', 'income', 'transfer']
     for (const tp of types) {
       const tab = this.typeTabsEl.createEl('button', {
-        text: t(`type.${tp}`),
+        text: t(`label.type.${tp}`),
         cls: 'pw-type-tab' + (this.type === tp ? ' is-active' : ''),
       })
       tab.dataset['type'] = tp

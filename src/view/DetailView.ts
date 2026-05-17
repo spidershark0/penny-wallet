@@ -741,7 +741,7 @@ export class DetailView extends ItemView {
 
     // col2: type badge (V-center)
     row.createEl('span', {
-      text: t(`type.${tx.type}`),
+      text: t(`label.type.${tx.type}`),
       cls: `pw-type-badge pw-type-${tx.type}`,
     })
 

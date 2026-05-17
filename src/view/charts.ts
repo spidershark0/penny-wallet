@@ -287,7 +287,7 @@ export function drawPie(
   for (const [key, value] of filtered) {
     segments.push({
       key,
-      label: key === '__other__' ? t('cat.other') : translateCategory(key),
+      label: key === '__other__' ? t('label.cat.other') : translateCategory(key),
       value,
     })
   }

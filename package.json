@@ -12,6 +12,7 @@
     "build:dev": "node esbuild.config.mjs development",
     "lint": "eslint \"src/**/*.ts\" && tsc --noEmit --pretty",
     "lint:fix": "eslint \"src/**/*.ts\" --fix && tsc --noEmit --pretty",
+    "lint:i18n": "node scripts/lint-i18n.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",

@@ -84,7 +84,7 @@ export class AssetView extends ItemView {
       const row = walletList.createDiv('pw-asset-wallet-row')
       const left = row.createDiv('pw-wallet-left')
       left.createEl('span', {
-        text: t(`walletType.${wallet.type}`),
+        text: t(`label.walletType.${wallet.type}`),
         cls: `pw-wallet-badge pw-badge-${wallet.type}`,
       })
       left.createEl('span', { text: wallet.name, cls: 'pw-wallet-name' })
