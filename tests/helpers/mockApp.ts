@@ -13,7 +13,8 @@ export function createMockApp(
 
   const makeTFile = (path: string) => Object.assign(new TFile(), {
     path,
-    basename: path.split('/').pop()!.replace(/\.md$/, ''),
+    basename: path.split('/').pop()!.replace(/\.[^.]+$/, ''),
+    extension: path.includes('.') ? path.split('.').pop()! : '',
   })
 
   const vault = {
@@ -28,8 +29,15 @@ export function createMockApp(
       return null
     },
     getFolderByPath: (path: string) => {
-      const hasChildren = [...store.keys()].some(p => p.startsWith(path + '/'))
-      return hasChildren ? { path } : null
+      const children = [...store.keys()]
+        .filter(p => {
+          if (!p.startsWith(path + '/')) return false
+          // direct children only (no nested slashes after the folder path)
+          return !p.slice(path.length + 1).includes('/')
+        })
+        .map(p => makeTFile(p))
+      const hasAny = [...store.keys()].some(p => p.startsWith(path + '/'))
+      return hasAny ? { path, children } : null
     },
     getMarkdownFiles: () =>
       [...store.keys()]

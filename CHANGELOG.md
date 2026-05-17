@@ -2,6 +2,12 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
+## [0.0.14] - 2026-05-17
+
+### Internal
+- scope month-file listing to plugin folder — replace `vault.getMarkdownFiles()` with `getFolderByPath().children` to remove the "Vault Enumeration" disclosure from Obsidian plugin reviewer
+- pin vite to `^8` in devDependencies — prevents accidental downgrade (stylelint install silently regressed vite to 6.x, breaking obsidian package resolution in tests)
+
 ## [0.0.13] - 2026-05-17
 
 ### Changed

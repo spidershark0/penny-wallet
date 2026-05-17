@@ -5,9 +5,12 @@ import { vi } from 'vitest'
 class TFile {
   path: string = ''
   basename: string = ''
+  extension: string = ''
   constructor(path: string = '') {
     this.path = path
-    this.basename = path ? path.split('/').pop()!.replace(/\.md$/, '') : ''
+    const leaf = path ? path.split('/').pop()! : ''
+    this.basename = leaf.replace(/\.[^.]+$/, '')
+    this.extension = leaf.includes('.') ? leaf.split('.').pop()! : ''
   }
 }
 
