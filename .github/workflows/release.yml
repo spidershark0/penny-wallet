@@ -31,10 +31,19 @@ jobs:
       - name: Build plugin
         run: npm run build
 
-      - name: Verify tag is from main branch
+      - name: Determine release mode (stable vs validation)
+        id: mode
         run: |
-          if ! git branch -r --contains ${{ github.sha }} | grep -q "origin/main"; then
-            echo "❌ Release tags must originate from the main branch"
+          if git branch -r --contains ${{ github.sha }} | grep -q "origin/main"; then
+            echo "kind=stable" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "title_suffix=" >> $GITHUB_OUTPUT
+          elif git branch -r --contains ${{ github.sha }} | grep -q "origin/dev"; then
+            echo "kind=validation" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "title_suffix= (validation)" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Stable tag must originate from main or dev branch"
             exit 1
           fi
 
@@ -61,14 +70,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${{ github.ref_name }}
+          PRERELEASE_FLAG=""
+          if [ "${{ steps.mode.outputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
 
           if gh release view "$TAG" > /dev/null 2>&1; then
             echo "Release $TAG already exists. Updating assets..."
           else
-            echo "Creating new release $TAG..."
+            echo "Creating new release $TAG (${{ steps.mode.outputs.kind }})..."
             gh release create "$TAG" \
-              --title "$TAG" \
-              --notes-file /tmp/notes.md
+              --title "$TAG${{ steps.mode.outputs.title_suffix }}" \
+              --notes-file /tmp/notes.md \
+              $PRERELEASE_FLAG
           fi
 
           gh release upload "$TAG" \
@@ -78,6 +92,7 @@ jobs:
             --clobber
 
       - name: Attest release assets
+        if: steps.mode.outputs.kind == 'stable'
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
