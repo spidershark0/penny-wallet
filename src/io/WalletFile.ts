@@ -316,6 +316,17 @@ export class WalletFile {
     return normalizePath(`${this.config.folderName}/${yearMonth}.md`)
   }
 
+  // List month files within the plugin folder only (avoids enumerating the whole vault).
+  private listMonthFiles(): TFile[] {
+    const folder = this.app.vault.getFolderByPath(this.config.folderName)
+    if (!folder) return []
+    return folder.children.filter((f): f is TFile =>
+      f instanceof TFile &&
+      f.extension === 'md' &&
+      /^\d{4}-\d{2}$/.test(f.basename),
+    )
+  }
+
   private async ensureFolder(): Promise<void> {
     const folder = this.config.folderName
     if (!this.app.vault.getFolderByPath(folder)) {
@@ -487,13 +498,8 @@ export class WalletFile {
    * On plugin load: only recalculate months that are missing frontmatter.
    */
   async bootstrapFrontmatter(): Promise<void> {
-    const folder = this.app.vault.getFolderByPath(this.config.folderName)
-    if (!folder) return
-
-    const files = this.app.vault.getMarkdownFiles().filter((f: TFile) =>
-      f.path.startsWith(this.config.folderName + '/') &&
-      /^\d{4}-\d{2}$/.test(f.basename),
-    )
+    const files = this.listMonthFiles()
+    if (files.length === 0) return
 
     for (const file of files) {
       const content = await this.app.vault.read(file)
@@ -520,10 +526,7 @@ export class WalletFile {
 
   async validateAllData(): Promise<ValidationIssue[]> {
     const issues: ValidationIssue[] = []
-    const files = this.app.vault.getMarkdownFiles().filter((f: TFile) =>
-      f.path.startsWith(this.config.folderName + '/') &&
-      /^\d{4}-\d{2}$/.test(f.basename),
-    )
+    const files = this.listMonthFiles()
 
     const monthData = new Map<string, Transaction[]>()
 
@@ -708,11 +711,7 @@ export class WalletFile {
   }
 
   getAllYearMonths(): string[] {
-    const files = this.app.vault.getMarkdownFiles().filter((f: TFile) =>
-      f.path.startsWith(this.config.folderName + '/') &&
-      /^\d{4}-\d{2}$/.test(f.basename),
-    )
-    return files.map((f: TFile) => f.basename).sort()
+    return this.listMonthFiles().map((f: TFile) => f.basename).sort()
   }
 
   /** Get all month summaries for trend view (reads frontmatter only) */
