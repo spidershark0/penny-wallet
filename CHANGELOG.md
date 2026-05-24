@@ -2,6 +2,11 @@
 
 All notable changes to PennyWallet will be documented in this file.
 
+## [0.0.15] - 2026-05-24
+
+### Fixed
+- TagPicker search input no longer interrupts IME composition (iOS Bopomofo / desktop IME), preventing dropped characters when typing tags
+
 ## [0.0.14] - 2026-05-17
 
 ### Changed
