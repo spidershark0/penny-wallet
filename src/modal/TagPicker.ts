@@ -21,7 +21,8 @@ export function toggleStagedTag(staged: ReadonlySet<string>, tag: string): Set<s
 
 export type AddRowState =
   | { kind: 'empty' }                       // search empty — row prompts to focus search
-  | { kind: 'invalid'; name: string }       // search has chars but fails validateTag
+  | { kind: 'invalid'; name: string }       // search has chars but fails validateTag (e.g. ,|)
+  | { kind: 'too-long'; name: string }      // exceeds 5 CJK / 10 non-CJK length cap
   | { kind: 'duplicate'; name: string }     // exact match against existing tag
   | { kind: 'limit'; name: string }         // would exceed 3-tag staged cap
   | { kind: 'addable'; name: string }       // ready to add
@@ -33,6 +34,9 @@ export function getAddRowState(
 ): AddRowState {
   const normalized = query.trim().replace(/^#/, '').trim()
   if (!normalized) return { kind: 'empty' }
+  const len = [...normalized].length
+  const maxLen = CJK_RE.test(normalized) ? 5 : 10
+  if (len > maxLen) return { kind: 'too-long', name: normalized }
   if (!validateTag(normalized)) return { kind: 'invalid', name: normalized }
   if (existingTags.includes(normalized)) return { kind: 'duplicate', name: normalized }
   if (stagedCount >= TAG_LIMIT) return { kind: 'limit', name: normalized }
@@ -150,25 +154,11 @@ export function openTagPicker(params: TagPickerParams): () => void {
     }
   }
 
-  // Live-filter the search input so it can double as the new-tag candidate:
-  // strip , and |, cap length per validateTag rules. Search staying within
-  // tag-name rules also prevents the addRow falling into 'invalid' state by
-  // user typing — they can still paste invalid content (handled defensively
-  // in getAddRowState).
-  let lastValidSearch = searchInput.value
-  const filterSearch = () => {
-    const v = searchInput.value
-    const stripped = v.replace(/[,|]/g, '')
-    const noHash = stripped.replace(/^#/, '')
-    const hasCjk = CJK_RE.test(noHash)
-    const maxLen = hasCjk ? 5 : 10
-    if ([...noHash].length > maxLen) {
-      searchInput.value = lastValidSearch
-      return
-    }
-    if (stripped !== v) searchInput.value = stripped
-    lastValidSearch = searchInput.value
-  }
+  // NOTE: do not mutate `searchInput.value` from the input handler. iOS
+  // 注音 keyboard does not fire compositionstart/end consistently and
+  // overwriting the value mid-input breaks the IME session (chars are
+  // dropped). Length / illegal-char enforcement is done via getAddRowState
+  // (too-long / invalid) and validateTag at submit.
 
   const renderAddUI = () => {
     const state = getAddRowState(query, walletFile.getConfig().tags, staged.size)
@@ -200,8 +190,13 @@ export function openTagPicker(params: TagPickerParams): () => void {
         inlineAdd.setAttribute('disabled', 'true')
         inlineAdd.addClass('is-disabled')
         break
+      case 'too-long':
+        inlineAdd.show()
+        inlineAdd.setText(t('tagPicker.tooLong'))
+        inlineAdd.setAttribute('disabled', 'true')
+        inlineAdd.addClass('is-disabled')
+        break
       case 'invalid':
-        // Defensive against paste; typed input is filtered by filterSearch.
         inlineAdd.show()
         inlineAdd.setText(t('tagPicker.addNamed').replace('{name}', state.name))
         inlineAdd.setAttribute('disabled', 'true')
@@ -218,13 +213,11 @@ export function openTagPicker(params: TagPickerParams): () => void {
     staged.add(state.name)
     searchInput.value = ''
     query = ''
-    lastValidSearch = ''
     renderChips()
     renderAddUI()
   }
 
   searchInput.addEventListener('input', () => {
-    filterSearch()
     query = searchInput.value
     renderChips()
     renderAddUI()

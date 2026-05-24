@@ -63,10 +63,22 @@ describe('getAddRowState', () => {
   })
 
   it('returns invalid when validateTag rejects the name', () => {
-    expect(getAddRowState('一二三四五六', [], 0))
-      .toEqual({ kind: 'invalid', name: '一二三四五六' })
     expect(getAddRowState('a,b', [], 0))
       .toEqual({ kind: 'invalid', name: 'a,b' })
+    expect(getAddRowState('a|b', [], 0))
+      .toEqual({ kind: 'invalid', name: 'a|b' })
+  })
+
+  it('returns too-long when length exceeds 5 CJK / 10 non-CJK', () => {
+    expect(getAddRowState('一二三四五六', [], 0))
+      .toEqual({ kind: 'too-long', name: '一二三四五六' })
+    expect(getAddRowState('abcdefghijk', [], 0))
+      .toEqual({ kind: 'too-long', name: 'abcdefghijk' })
+    // boundary: exactly at cap is still addable
+    expect(getAddRowState('一二三四五', [], 0))
+      .toEqual({ kind: 'addable', name: '一二三四五' })
+    expect(getAddRowState('abcdefghij', [], 0))
+      .toEqual({ kind: 'addable', name: 'abcdefghij' })
   })
 
   it('returns limit when staged count is already at the cap', () => {
