@@ -19,7 +19,9 @@ A personal finance tracker plugin for [Obsidian](https://obsidian.md). Log expen
 
 ### Community plugins
 
-PennyWallet is not yet listed in Obsidian's community plugins. Use BRAT or manual install below.
+1. Open **Settings → Community plugins → Browse**
+2. Search for **PennyWallet**
+3. Click **Install**, then **Enable**
 
 ### BRAT (beta)
 
